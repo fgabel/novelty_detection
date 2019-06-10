@@ -3,7 +3,7 @@ import random
 import skimage.io
 import skimage.transform
 import numpy as np
-
+from utils.utils import get_image_data, get_binary_label_data, get_label_data
 # Batch size 1 is fine for VGG
 BATCH_SIZE = 1
 
@@ -46,3 +46,4 @@ def get_training_data_list(training_folder_images_path, IMAGES_SUFFIX):
         training_data_name = training_image_path[0:len(training_image_path) - len(IMAGES_SUFFIX)]
         training_data_name_list.append(training_data_name)
     return training_data_name_list
+
