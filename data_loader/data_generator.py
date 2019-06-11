@@ -3,24 +3,24 @@ import random
 import skimage.io
 import skimage.transform
 import numpy as np
-from utils.utils import get_image_data, get_binary_label_data, get_label_data
+from utils.data_utils import get_image_data, get_binary_label_data, get_label_data
 # Batch size 1 is fine for VGG
 BATCH_SIZE = 1
 
 
 class DataGenerator:
     """
-
+    Class for data generation in batches(both train and validation)
     """
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, dataconfig):
+        self.config = dataconfig
         # load data here
-        get_training_data_list(mode, cnofig.datapath #todo)
-        self.input = np.ones((500, 784))
-        self.y = np.ones((500, 10))
+        self.data_name_list = get_training_data_list(mode, self.config.datapath)
 
     def next_batch(self, batch_size):
-        batch = np.random.choice(data_name_list, batch_size)
+        X = [] # care that this does not cause unintended consequences
+        Y = []
+        batch = np.random.choice(self.data_name_list, batch_size)
         for data_name in batch:
             image_data_volume = get_image_data(dataset_type, data_name)
 
