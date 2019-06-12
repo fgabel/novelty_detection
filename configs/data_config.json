@@ -6,7 +6,7 @@
   "images_directory_name": "images",
   "classes_directory_name": "classes",
   "images_suffix": "_leftImg8bit.png",
-  "CLASSES_SUFFIX": "_gtFine_color.png",
+  "classes_suffix": "_gtFine_color.png",
   "dataset_folders": {
     "training": "C:/Users/Frank/Desktop/students/students/data/cityscapes/train",
     "validation": "C:/Users/Frank/Desktop/students/students/data/cityscapes/val"

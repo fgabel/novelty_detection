@@ -11,10 +11,10 @@ def load_image(dataset_type, data_name, dataset_folders, images_directory_name, 
 
     return image
 
-def load_labels(dataset_type, data_name):
-    folder_labels_path = DATASET_FOLDERS[dataset_type] + "/" + CLASSES_DIRECTORY_NAME
+def load_labels(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix):
+    folder_labels_path = dataset_folders[dataset_type] + "/" + classes_directory_name
 
-    labels_filename = folder_labels_path + "/" + data_name + CLASSES_SUFFIX
+    labels_filename = folder_labels_path + "/" + data_name + classes_suffix
 
     labels = skimage.io.imread(labels_filename).astype(np.int8)
 
@@ -25,8 +25,8 @@ def get_image_data(dataset_type, data_name, dataset_folders, images_directory_na
                                  data_mean, data_std)
 
 # We downsample the labels for faster training instead of performing an upsampling at the end
-def get_label_data(dataset_type, data_name):
-    labels = load_labels(dataset_type, data_name)
+def get_label_data(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix):
+    labels = load_labels(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix)
 
     downsampled_labels = skimage.transform.resize(labels, (int(labels.shape[0] / 8), labels.shape[1] / 8), order=0, preserve_range=True, mode='constant').astype(np.int8)
 

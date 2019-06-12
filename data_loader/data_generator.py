@@ -19,6 +19,7 @@ class DataGenerator:
         self.mode = mode
         # load data here
         self.data_name_list = get_training_data_list(self.config.dataset_folders[mode]+'/images', self.config.images_suffix)
+        print(self.data_name_list)
         self.binary_labels = 0
     def next_batch(self, batch_size):
         X = [] # care that this does not cause unintended consequences
@@ -33,7 +34,8 @@ class DataGenerator:
             if self.binary_labels:
                 label_data = get_binary_label_data(self.mode, data_name)
             else:
-                label_data = get_label_data(self.mode, data_name)
+                label_data = get_label_data(self.mode, data_name, self.config.dataset_folders,
+                                            self.config.classes_directory_name, self.config.classes_suffix)
 
             X.append(image_data_volume)
             Y.append(label_data)
@@ -48,13 +50,15 @@ def get_training_data_list(training_folder_images_path, images_suffix):
     :return:
     """
     training_data_name_list = []
-    print(os.listdir(training_folder_images_path))
+
     for training_image_path in os.listdir(training_folder_images_path):
+
         training_data_name = training_image_path[0:len(training_image_path) - len(images_suffix)]
+        print(training_data_name)
         training_data_name_list.append(training_data_name)
     return training_data_name_list
 
 cfg = get_config_from_json("C:/Users/Frank/Desktop/novelty_detection/configs/data_config.json")[0]
 dat = DataGenerator(cfg)
 for batch in dat.next_batch(2):
-    print(batch.shape)
+    print(batch)
