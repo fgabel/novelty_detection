@@ -1,13 +1,13 @@
 {
   "LABEL_SCHEME": ["BICYCLE", "BUILDING", "BUS", "CAR", "FENCE", "MOTORCYCLE", "PERSON", "POLE", "RIDER", "ROAD", "SIDEWALK", "SKY", "TERRAIN", "TRAFFIC_LIGHT", "TRAFFIC_SIGN", "TRAIN", "TRUCK", "VEGETATION", "WALL"],
-  "DATA_MEAN": [73.1574881705, 82.9080206596, 72.3900075701],
-  "DATA_STD": [44.906197822, 46.1445214188, 45.3104437099],
+  "data_mean": [73.1574881705, 82.9080206596, 72.3900075701],
+  "data_std": [44.906197822, 46.1445214188, 45.3104437099],
   "OUTPUT_CLASSES": 19,
-  "IMAGES_DIRECTORY_NAME": "images",
-  "CLASSES_DIRECTORY_NAME": "classes",
-  "IMAGES_SUFFIX": "_leftImg8bit.png",
+  "images_directory_name": "images",
+  "classes_directory_name": "classes",
+  "images_suffix": "_leftImg8bit.png",
   "CLASSES_SUFFIX": "_gtFine_color.png",
-  "DATASET_FOLDERS": {
+  "dataset_folders": {
     "training": "C:/Users/Frank/Desktop/students/students/data/cityscapes/train",
     "validation": "C:/Users/Frank/Desktop/students/students/data/cityscapes/val"
 },

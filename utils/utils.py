@@ -2,30 +2,8 @@ import argparse
 import skimage.transform
 import skimage.io
 
-def load_image(dataset_type, data_name):
-    folder_images_path = DATASET_FOLDERS[dataset_type] + "/" + IMAGES_DIRECTORY_NAME
 
-    image_filename = folder_images_path + "/" + data_name + IMAGES_SUFFIX
 
-    image = skimage.io.imread(image_filename).astype(np.float32)
-
-    return image
-
-def load_labels(dataset_type, data_name):
-    folder_labels_path = DATASET_FOLDERS[dataset_type] + "/" + CLASSES_DIRECTORY_NAME
-
-    labels_filename = folder_labels_path + "/" + data_name + CLASSES_SUFFIX
-
-    labels = skimage.io.imread(labels_filename).astype(np.int8)
-
-    return labels
-
-def preprocess_image_data(image):
-    image[:, :, 0] = (image[:, :, 0] - DATA_MEAN[0]) / DATA_STD[0]
-    image[:, :, 1] = (image[:, :, 1] - DATA_MEAN[1]) / DATA_STD[1]
-    image[:, :, 2] = (image[:, :, 2] - DATA_MEAN[2]) / DATA_STD[2]
-
-    return image
 
 
 def get_args():
