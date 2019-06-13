@@ -6,19 +6,22 @@ from trainers.example_trainer import ExampleTrainer
 from utils.config import process_config
 from utils.dirs import create_dirs
 from utils.logger import Logger
-from utils.utils import get_args
+# from utils.utils import get_args
 
 
 def main():
     # capture the config path from the run arguments
     # then process the json configuration file
 
-    #args = get_args()
+    # args = get_args()
 
-    config = process_config("C:/Users/Frank/Desktop/novelty_detection/configs/example.json")
+    config = process_config("../configs/train_config.json")
+
 
     # create the experiments dirs
     create_dirs([config.summary_dir, config.checkpoint_dir])
+
+    """
     # create tensorflow session
     sess = tf.Session()
     # create your data generator
@@ -34,7 +37,7 @@ def main():
     model.load(sess)
     # here you train your model
     trainer.train()
-
+    """
 
 if __name__ == '__main__':
     main()

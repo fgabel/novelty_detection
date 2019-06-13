@@ -2,6 +2,7 @@ import argparse
 import skimage.transform
 import skimage.io
 import numpy as np
+
 def load_image(dataset_type, data_name, dataset_folders, images_directory_name, images_suffix):
     folder_images_path = dataset_folders[dataset_type] + "/" + images_directory_name
 
@@ -40,19 +41,22 @@ def preprocess_image_data(image, data_mean, data_std):
     return image
 
 
-def binarize_labels(labels):
+def binarize_labels(labels, output_classes = 1000):
 
     height = labels.shape[0]
     width = labels.shape[1]
 
     labels = labels.flatten()
 
-    labels_binary = np.zeros((labels.shape[0], OUTPUT_CLASSES + 1), dtype="bool")
+    labels_binary = np.zeros((labels.shape[0], output_classes + 1), dtype="bool")
     labels_binary[np.arange(labels.shape[0]), labels] = 1
-    labels_binary[labels == OUTPUT_CLASSES] = 0
-    labels_binary = labels_binary[:, :OUTPUT_CLASSES]
+    labels_binary[labels == output_classes] = 0
+    labels_binary = labels_binary[:, :output_classes]
 
-    return labels_binary.reshape(height,width,OUTPUT_CLASSES)
+    return labels_binary.reshape(height,width,output_classes)
 
-def get_binary_label_data(dataset_type, data_name):
-    return binarize_labels(get_label_data(dataset_type, data_name))
+def get_binary_label_data(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix, output_classes):
+    # dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix
+    return binarize_labels(get_label_data(
+        dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix
+    ), output_classes=output_classes)

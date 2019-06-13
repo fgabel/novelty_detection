@@ -1,7 +1,7 @@
 import json
 from bunch import Bunch
 import os
-
+from pathlib import Path
 
 def get_config_from_json(json_file):
     """
@@ -10,7 +10,10 @@ def get_config_from_json(json_file):
     :return: config(namespace) or config(dictionary)
     """
     # parse the configurations from the config json file provided
-    with open(json_file, 'r') as config_file:
+
+    filename = Path(json_file)
+
+    with open(filename, 'r') as config_file:
         config_dict = json.load(config_file)
 
     # convert the dictionary to a namespace using bunch lib

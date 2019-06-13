@@ -7,6 +7,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import Flatten, Dense, Dropout
 import numpy as np
+
 # Numerically stable softmax - Old code probably also available in keras api already
 class Softmax4D(Layer):
     def __init__(self, axis=-1, **kwargs):

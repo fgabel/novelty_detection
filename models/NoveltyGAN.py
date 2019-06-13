@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import print_function
+
+import h5py
+
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import glorot_normal, Zeros, Constant
@@ -7,10 +12,8 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import Flatten, Dense, Dropout
 from tensorflow.keras.layers import InputSpec, Concatenate
-from Discriminator import Discriminator
+from tensorflow.keras.optimizers import Adam
 
-from __future__ import division
-from __future__ import print_function
 import os
 import time
 import math
@@ -19,9 +22,14 @@ import tensorflow as tf
 import numpy as np
 from six.moves import xrange
 
-from ops import *
-from utils import *
+# from ops import *
+# from utils import *
+from utils.layer_utils import Softmax4D
 
+# Note: this method is just placeholder by now
+# TODO: add an additional moduke for handling optimizers
+def adam_optimizer():
+    return Adam(lr=0.0001, beta_1=0.99, beta_2=0.999, epsilon=1e-6)
 
 def conv_out_size_same(size, stride):
     return int(math.ceil(float(size) / float(stride)))
@@ -43,15 +51,31 @@ class NoveltyGAN():
         self.fcn = fcn
         self.upsampling = upsampling
         self.alpha = alpha
+        self.imagenet_filepath = imagenet_filepath
+        self.model_filepath = model_filepath
+        # TODO: set self.num_filters accordingly (see down below); dummy initialization by now
+        self.num_filters = 32
 
+        # Setup generator and discriminator
 
-    def discriminator(self, image, y=None, reuse=False):
+        self.generator = None
+        self.discriminator = None
+
+        self.build_generator()
+        self.build_discriminator()
+
+        # Stick generator and discriminator together to obtain the GAN
+
+        self.gan = None
+
+        self.build_gan()
+
+    def build_discriminator(self):
         """from the paper adversarial ..."""
-
 
         # Discriminator receives two inputs: label map and image
         # Note: we are using channel last convention
-        label_input = Input(shape=(None, None, OUTPUT_CLASSES))
+        label_input = Input(shape=(None, None, self.generator_output_classes))
         img_input = Input(shape=(None, None, 3))
 
         # Left branch
@@ -68,7 +92,7 @@ class NoveltyGAN():
         # (512, 1024) -> (512, 1024)
         pool_right_2 = MaxPooling2D((2,2), strides=(2,2), name='pool_right_2')(conv_right_2)
         # (512, 1024) -> (256, 512)
-        # TODO: There is some mismatch in dimensions
+        # There is some mismatch in dimensions (done)
         """
 
         # Right branch
@@ -89,25 +113,48 @@ class NoveltyGAN():
         # Merge the outputs of the two branches together
         concat = Concatenate(axis=-1)([conv_left_1, pool_right_3])
         # Concat now has 64*2 = 128 channels
+        # i.e. (128, 256, 128)
 
-        conv_1 = Conv2D(128, (3, 3), activation='relu', name='conv_1', padding='valid')(concat)
+        conv_1 = Conv2D(128, (3, 3), activation='relu', name='conv_1', padding='same')(concat)
         pool_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
-        conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='valid')(pool_1)
+        # (128, 256, 128) -> (64, 128, 128)
+        conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='same')(pool_1)
         pool_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
-        conv_3 = Conv2D(512, (3, 3), activation='relu', name='conv_3', padding='valid')(pool_2)
+        # (64, 128, 128) -> (32, 64, 256)
+        conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(pool_2)
+        pool_3 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_3')(conv_3)
+        # (32, 64, 256) -> (16, 32, 256)
+        conv_4 = Conv2D(512, (3, 3), name='conv_4', padding='same')(pool_3)
+        pool_4 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_4')(conv_4)
+        # (16, 32, 256) -> (8, 16, 512)
 
-        out = Conv2D(2, (3, 3), name='conv_4', padding='valid')(conv_3)
+        # Augment the original architecture since our images are of larger dimensions (?)
+        conv_5 = Conv2D(512, (3, 3), name='conv_5', padding='same')(pool_4)
+        pool_5 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_5')(conv_5)
+        # (8, 16, 512) -> (4, 8, 512)
+        conv_6 = Conv2D(1024, (3, 3), name='conv_6', padding='same')(pool_5)
+        pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
+        # (4, 8, 512) -> (2, 4, 1024)
+        conv_7 = Conv2D(1024, (3, 3), name='conv_7', padding='same')(pool_6)
+        pool_7 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_7')(conv_7)
+        # (2, 4, 10124) -> (1, 2, 1024)
+        conv_8 = Conv2D(1, (1, 1), name='conv_8', padding='valid')(pool_7)
+        # (1, 2, 1024) -> (1, 2, 1)
+
+        # TODO: somehow reshape conv_8, s.t. num_channels == 2 (?)
+        out = conv_8
 
         discriminator = Model(inputs=[label_input, img_input], outputs=out)
         discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
-        return discriminator
 
-    def generator(self, z, y=None):
+        self.discriminator = discriminator
+
+    def build_generator(self):
         """VGG"""
 
         weight_value_tuples = []
 
-        if fcn:
+        if self.fcn:
             xavier_weight_filler = 'glorot_uniform'
             zeros_weight_filler = 'zeros'
             fc_bias_weight_filler = 'zeros'
@@ -116,8 +163,8 @@ class NoveltyGAN():
             zeros_weight_filler = Zeros()
             fc_bias_weight_filler = Constant(value=0.1)
 
-        if fcn and imagenet_filepath:
-            weights_of_pretrained_model = h5py.File(imagenet_filepath, mode='r')
+        if self.fcn and self.imagenet_filepath:
+            weights_of_pretrained_model = h5py.File(self.imagenet_filepath, mode='r')
 
             if 'layer_names' not in weights_of_pretrained_model.attrs and 'model_weights' in weights_of_pretrained_model:
                 weights_of_pretrained_model = weights_of_pretrained_model['model_weights']
@@ -140,7 +187,7 @@ class NoveltyGAN():
                 weight_values[0] = np.asarray(weight_values[0], dtype=np.float32)
                 if len(weight_values[0].shape) == 4:
                     weight_values[0] = weight_values[0]
-                    if alpha == 1:
+                    if self.alpha == 1:
                         weight_values[0] = weight_values[0].transpose(3, 2, 1,
                                                                       0)  # todo just because model with alpha 1 was trained using theano backend
 
@@ -148,13 +195,13 @@ class NoveltyGAN():
 
             weightFC0W = np.asarray(weight_value_tuples[13][0], dtype=np.float32)
             weightFC0b = np.asarray(weight_value_tuples[13][1], dtype=np.float32)
-            weightFC0W = weightFC0W.reshape((7, 7, int(512 * alpha), int(4096 * alpha)))
+            weightFC0W = weightFC0W.reshape((7, 7, int(512 * self.alpha), int(4096 * self.alpha)))
 
             weight_value_tuples[13] = [weightFC0W, weightFC0b]
 
             weightFC1W = np.asarray(weight_value_tuples[14][0], dtype=np.float32)
             weightFC1b = np.asarray(weight_value_tuples[14][1], dtype=np.float32)
-            weightFC1W = weightFC1W.reshape((1, 1, int(4096 * alpha), int(4096 * alpha)))
+            weightFC1W = weightFC1W.reshape((1, 1, int(4096 * self.alpha), int(4096 * self.alpha)))
 
             weight_value_tuples[14] = [weightFC1W, weightFC1b]
 
@@ -239,9 +286,9 @@ class NoveltyGAN():
                          weights=weight_value_tuples[14] if len(weight_value_tuples) > 0 else None, name="fc7")(fc6)
             fc7 = Dropout(0.5)(fc7)
 
-            score_fr = Conv2D(self.output_classes, (1, 1), activation='relu', name="score_fr")(fc7)
-            score_pool4 = Conv2D(self.output_classes, (1, 1), activation='relu', name="score_pool4")(pool4)
-            score_pool3 = Conv2D(self.output_classes, (1, 1), activation='relu', name="score_pool3")(pool3)
+            score_fr = Conv2D(self.generator_output_classes, (1, 1), activation='relu', name="score_fr")(fc7)
+            score_pool4 = Conv2D(self.generator_output_classes, (1, 1), activation='relu', name="score_pool4")(pool4)
+            score_pool3 = Conv2D(self.generator_output_classes, (1, 1), activation='relu', name="score_pool3")(pool3)
 
             upsampling1 = UpSampling2D(size=(2, 2), interpolation='bilinear')(score_fr)
             fuse_pool4 = add([upsampling1, score_pool4])
@@ -274,19 +321,42 @@ class NoveltyGAN():
             fc7 = Dense(self.num_filters, activation='relu', name="fc7", bias_initializer=fc_bias_weight_filler,
                         kernel_initializer=xavier_weight_filler)(fc6)
             fc7 = Dropout(0.5)(fc7)
-            output = Dense(self.output_classes, activation='softmax_output', name="scoring",
+            output = Dense(self.generator_output_classes, activation='softmax_output', name="scoring",
                            bias_initializer=fc_bias_weight_filler, kernel_initializer=xavier_weight_filler)(fc7)
 
-        self.model = Model(inputs=rgb_input, outputs=output)
+        generator = Model(inputs=rgb_input, outputs=output)
 
         if self.model_filepath:
-            self.model.load_weights(self.model_filepath)
+            generator.load_weights(self.model_filepath)
+
+        loss = {}
+        loss_weights = {}
+
+        loss["softmax_output"] = "categorical_crossentropy"
+        loss_weights["softmax_output"] = 1.
+
+        generator.compile(
+            optimizer=adam_optimizer(),
+            loss=loss,
+            loss_weights=loss_weights
+        )
+
+        self.generator = generator
+
+    def build_gan(self):
+        self.discriminator.trainable = False
+        # label_input = Input(shape=(None, None, self.generator_output_classes))
+        img_input = Input(shape=(None, None, 3))
+        x = self.generator(img_input)
+        # Note: we treat the output of the generator for img_input as input to discriminator
+        gan_output = self.discriminator([x, img_input])
+        # gan = Model(inputs=[label_input, img_input], outputs=gan_output)
+        gan = Model(inputs=img_input, outputs=gan_output)
+        gan.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
+        self.gan = gan
 
     def sampler(self, z, y=None):
         pass
-
-    def
-
 
     @property
     def model_dir(self):
