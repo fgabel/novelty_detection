@@ -124,25 +124,26 @@ class NoveltyGAN():
         conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(pool_2)
         pool_3 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_3')(conv_3)
         # (32, 64, 256) -> (16, 32, 256)
-        conv_4 = Conv2D(512, (3, 3), name='conv_4', padding='same')(pool_3)
+        conv_4 = Conv2D(512, (3, 3), activation='relu', name='conv_4', padding='same')(pool_3)
         pool_4 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_4')(conv_4)
         # (16, 32, 256) -> (8, 16, 512)
 
         # Augment the original architecture since our images are of larger dimensions (?)
-        conv_5 = Conv2D(512, (3, 3), name='conv_5', padding='same')(pool_4)
+        conv_5 = Conv2D(512, (3, 3), activation='relu', name='conv_5', padding='same')(pool_4)
         pool_5 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_5')(conv_5)
         # (8, 16, 512) -> (4, 8, 512)
-        conv_6 = Conv2D(1024, (3, 3), name='conv_6', padding='same')(pool_5)
+        conv_6 = Conv2D(1024, (3, 3), activation='relu', name='conv_6', padding='same')(pool_5)
         pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
         # (4, 8, 512) -> (2, 4, 1024)
-        conv_7 = Conv2D(1024, (3, 3), name='conv_7', padding='same')(pool_6)
+        conv_7 = Conv2D(1024, (3, 3), activation='relu', name='conv_7', padding='same')(pool_6)
         pool_7 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_7')(conv_7)
         # (2, 4, 10124) -> (1, 2, 1024)
         conv_8 = Conv2D(1, (1, 1), name='conv_8', padding='valid')(pool_7)
         # (1, 2, 1024) -> (1, 2, 1)
 
-        # TODO: somehow reshape conv_8, s.t. num_channels == 2 (?)
-        out = conv_8
+        # Flatten the output of the conv layer to obtain two outputs
+        # corresponding to the two classes real/fake
+        out = Flatten()(conv_8)
 
         discriminator = Model(inputs=[label_input, img_input], outputs=out)
         discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
