@@ -4,18 +4,25 @@ from data_loader.data_generator import DataGenerator
 
 from models.NoveltyGAN import NoveltyGAN
 
+from trainers.noveltygan_trainer import NoveltyGANTrainer
+
+from trainers.noveltygan_trainer import NoveltyGANTrainer
+
 from utils.config import process_config, get_config_from_json
 from utils.dirs import create_dirs
 from utils.logger import Logger
 
 # from utils.utils import get_args
-
-# from pathlib import Path
 import os
 
+<<<<<<< HEAD
 parser = argparse.ArgumentParser()
 parser.add_argument('--config_folder', help='The absolute path to the configs folder', default = '../configs/')
 args = parser.parse_args()
+=======
+import numpy as np
+
+>>>>>>> 97e0572a663b00933682bbc649152e010c3da81f
 def main():
     # capture the config path from the run arguments
     # then process the json configuration file
@@ -38,7 +45,12 @@ def main():
     novelty_gan = NoveltyGAN(generator_output_classes=cfg.OUTPUT_CLASSES, fcn=True, upsampling=False, alpha=0.25,
                              imagenet_filepath=IMAGENET_FILEPATH, model_filepath=MODEL_FILEPATH)
 
+    # create the trainer object
+    trainer = NoveltyGANTrainer(novelty_gan, data, config)
+    trainer.train_step_discriminator()
+
     # Sanity check: works.
+    """
     for batch in data.next_batch(3):
         labels_batch = novelty_gan.generator.predict_on_batch(batch[0])
         print("Image from batch:", batch[0].shape)
@@ -48,6 +60,19 @@ def main():
         # isReal = novelty_gan.discriminator.predict_on_batch([labels_batch, batch[0]])
         isReal = novelty_gan.gan.predict_on_batch(batch[0])
         print("discriminator prediction for ground-truth:", isReal.shape)
+    """
+
+    # Yet another sanity check for training.
+    """
+    for batch in data.next_batch(3):
+        img_batch = batch[0]
+        labels_batch = batch[1]
+        # predicted_labels_batch = novelty_gan.generator.predict_on_batch(img_batch)
+        target = np.zeros((3, 2))
+        target[:, 0] = 1
+        loss = novelty_gan.discriminator.train_on_batch([labels_batch, img_batch], target)
+        print(loss)
+    """
 
     if 1:
         print('_________________')
