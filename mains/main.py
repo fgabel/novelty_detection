@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import argparse
 from data_loader.data_generator import DataGenerator
 
 from models.NoveltyGAN import NoveltyGAN
@@ -13,19 +13,22 @@ from utils.logger import Logger
 # from pathlib import Path
 import os
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--config_folder', help='The absolute path to the configs folder', default = '../configs/')
+args = parser.parse_args()
 def main():
     # capture the config path from the run arguments
     # then process the json configuration file
 
     # args = get_args()
 
-    config = process_config("../configs/train_config.json")
+    config = process_config(args.config_folder+"train_config.json")
 
     # create the experiments dirs
     create_dirs([config.summary_dir, config.checkpoint_dir])
 
     # create your data generator
-    cfg = get_config_from_json("../configs/my_data_config.json")[0]
+    cfg = get_config_from_json(args.config_folder+"data_config.json")[0]
     data = DataGenerator(cfg)
 
     IMAGENET_FILEPATH = os.path.join(cfg.BASE_PATH, cfg.IMAGENET_FILEPATH)
@@ -46,5 +49,10 @@ def main():
         isReal = novelty_gan.gan.predict_on_batch(batch[0])
         print("discriminator prediction for ground-truth:", isReal.shape)
 
+    if 1:
+        print('_________________')
+        print(cfg)
+        print('_________________')
 if __name__ == '__main__':
+
     main()
