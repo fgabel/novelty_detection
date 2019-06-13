@@ -47,7 +47,12 @@ def main():
 
     # create the trainer object
     trainer = NoveltyGANTrainer(novelty_gan, data, config)
-    trainer.train_step_discriminator()
+
+    # loss = trainer.train_step_gan()
+    # loss = trainer.train_step(train_on_real_data=True)
+    # print("loss = ", loss)
+
+    trainer.train_epoch()
 
     # Sanity check: works.
     """
@@ -74,7 +79,7 @@ def main():
         print(loss)
     """
 
-    if 1:
+    if 0:
         print('_________________')
         print(cfg)
         print('_________________')
