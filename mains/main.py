@@ -15,14 +15,14 @@ from utils.logger import Logger
 # from utils.utils import get_args
 import os
 
-<<<<<<< HEAD
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--config_folder', help='The absolute path to the configs folder', default = '../configs/')
 args = parser.parse_args()
-=======
+
 import numpy as np
 
->>>>>>> 97e0572a663b00933682bbc649152e010c3da81f
+
 def main():
     # capture the config path from the run arguments
     # then process the json configuration file
