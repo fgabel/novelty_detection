@@ -6,8 +6,6 @@ from models.NoveltyGAN import NoveltyGAN
 
 from trainers.noveltygan_trainer import NoveltyGANTrainer
 
-from trainers.noveltygan_trainer import NoveltyGANTrainer
-
 from utils.config import process_config, get_config_from_json
 from utils.dirs import create_dirs
 from utils.logger import Logger
