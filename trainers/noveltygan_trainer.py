@@ -3,20 +3,39 @@ import numpy as np
 
 import os
 
-from tensorflow.keras.models import save_model
+import tensorflow as tf
+
+def named_logs(model, logs):
+    """
+    github.com/erenon
+    """
+    result = {}
+    for l in zip(model.metrics_names, logs):
+        result[l[0]] = l[1]
+    return result
 
 class NoveltyGANTrainer():
     def __init__(self, model, data, train_config):
         self.gan_model = model
         self.data = data
         self.config = train_config
+        self.tensorboard = tf.keras.callbacks.TensorBoard(
+            log_dir=os.path.join("../experiments", self.config.exp_name, "logs"),
+            histogram_freq=0,
+            batch_size=self.config.batch_size,
+            write_graph=True,
+            write_grads=True
+        )
+        self.tensorboard.set_model(self.gan_model.gan)
 
-    def train_epoch(self):
+    def train_epoch(self, id=0):
         loop = tqdm(range(self.config.num_iter_per_epoch))
         losses = []
         for _ in loop:
-            loss = self.train_step()
-            losses.append(loss)
+            loss_gan, _ = self.train_step()
+            losses.append(loss_gan)
+
+        self.tensorboard.on_epoch_end(id, named_logs(self.gan_model.gan, losses[-1]))
 
         loss = np.mean(losses)
 
@@ -85,5 +104,5 @@ class NoveltyGANTrainer():
         loss_discriminator = self.train_step_discriminator(train_on_real_data=True)
         loss_gan = self.train_step_gan()
 
-        return loss_gan
+        return loss_gan, loss_discriminator
 

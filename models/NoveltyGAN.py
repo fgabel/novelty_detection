@@ -353,7 +353,7 @@ class NoveltyGAN():
         gan_output = self.discriminator([x, img_input])
         # gan = Model(inputs=[label_input, img_input], outputs=gan_output)
         gan = Model(inputs=img_input, outputs=gan_output)
-        gan.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
+        gan.compile(loss='binary_crossentropy', optimizer=adam_optimizer(), metrics=['accuracy'])
         self.gan = gan
 
     def sampler(self, z, y=None):
