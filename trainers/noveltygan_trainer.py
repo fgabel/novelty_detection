@@ -17,7 +17,8 @@ class NoveltyGANTrainer():
         for _ in loop:
             loss = self.train_step()
             losses.append(loss)
-
+            print('Loss: ', loss)
+            # TODO: Why is the loss constant right away?
         loss = np.mean(losses)
 
         # TODO: Do something with the loss here (maybe try to obtain accuracy aswell)
@@ -55,7 +56,11 @@ class NoveltyGANTrainer():
 
         discriminator_input = [labels_batch, img_batch]
 
-        loss = self.gan_model.discriminator.train_on_batch(discriminator_input, discriminator_ground_truth)
+        loss = self.gan_model.discriminator.fit(x = discriminator_input,
+                                      y = discriminator_ground_truth,
+                                      batch_size = self.config.batch_size,
+                                      callbacks = # TODO: KERAS CALLBACK
+                                      )
 
         return loss
 
@@ -76,7 +81,11 @@ class NoveltyGANTrainer():
         gan_supervision = np.ones(self.config.batch_size)
 
         # Train the GAN (i.e. the generator) with fixed weights of discriminator
-        loss = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
+        loss = self.gan_model.gan.fit(x = img_batch,
+                                      y = gan_supervision,
+                                      batch_size = self.config.batch_size,
+                                      callbacks = # TODO: KERAS CALLBACK
+                                      )
 
         return loss
 
