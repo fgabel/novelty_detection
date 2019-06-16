@@ -30,20 +30,22 @@ class NoveltyGANTrainer():
 
     def train_epoch(self, id=0):
         loop = tqdm(range(self.config.num_iter_per_epoch))
-        losses = []
+        logs = []
         for _ in loop:
-            loss_gan, _ = self.train_step()
-            losses.append(loss_gan)
+            log_gan, _ = self.train_step()
+            logs.append(log_gan)
 
-        self.tensorboard.on_epoch_end(id, named_logs(self.gan_model.gan, losses[-1]))
-
-        loss = np.mean(losses)
+        logs_avg = np.mean(logs, axis = 0)
 
         # TODO: Do something with the loss here (maybe try to obtain accuracy aswell)
         # ...
 
         # TODO: improve on saving the weights here
         self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
+
+        self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg))
+
+        return 0
 
     def train_step_discriminator(self, train_on_real_data = True):
         """

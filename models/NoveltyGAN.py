@@ -145,7 +145,7 @@ class NoveltyGAN():
         # corresponding to the two classes real/fake
         out = Flatten()(conv_8)
 
-        discriminator = Model(inputs=[label_input, img_input], outputs=out)
+        discriminator = Model(inputs=[label_input, img_input], outputs=out, name="discriminator")
         discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
 
         self.discriminator = discriminator
@@ -312,6 +312,26 @@ class NoveltyGAN():
                 # shape = (128,256)
 
             output = Softmax4D(axis=3, name="softmax_output")(output_layer)
+
+            generator = Model(inputs=rgb_input, outputs=output, name="generator")
+
+            if self.model_filepath:
+                generator.load_weights(self.model_filepath)
+
+            loss = {}
+            loss_weights = {}
+
+            loss["softmax_output"] = "categorical_crossentropy"
+            loss_weights["softmax_output"] = 1.
+
+            generator.compile(
+                optimizer=adam_optimizer(),
+                loss=loss,
+                loss_weights=loss_weights
+            )
+
+            self.generator = generator
+
         else:
             # Univariate Classification Path (Imagenet Pretraining)
 
@@ -325,34 +345,16 @@ class NoveltyGAN():
             output = Dense(self.generator_output_classes, activation='softmax_output', name="scoring",
                            bias_initializer=fc_bias_weight_filler, kernel_initializer=xavier_weight_filler)(fc7)
 
-        generator = Model(inputs=rgb_input, outputs=output)
-
-        if self.model_filepath:
-            generator.load_weights(self.model_filepath)
-
-        loss = {}
-        loss_weights = {}
-
-        loss["softmax_output"] = "categorical_crossentropy"
-        loss_weights["softmax_output"] = 1.
-
-        generator.compile(
-            optimizer=adam_optimizer(),
-            loss=loss,
-            loss_weights=loss_weights
-        )
-
-        self.generator = generator
 
     def build_gan(self):
         self.discriminator.trainable = False
         # label_input = Input(shape=(None, None, self.generator_output_classes))
-        img_input = Input(shape=(None, None, 3))
+        img_input = Input(shape=(None, None, 3), name="gan_input")
         x = self.generator(img_input)
         # Note: we treat the output of the generator for img_input as input to discriminator
         gan_output = self.discriminator([x, img_input])
         # gan = Model(inputs=[label_input, img_input], outputs=gan_output)
-        gan = Model(inputs=img_input, outputs=gan_output)
+        gan = Model(inputs=img_input, outputs=gan_output, name="GAN")
         gan.compile(loss='binary_crossentropy', optimizer=adam_optimizer(), metrics=['accuracy'])
         self.gan = gan
 

@@ -13,6 +13,7 @@ from utils.logger import Logger
 # from utils.utils import get_args
 import os
 
+from trainers.noveltygan_trainer import named_logs
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config_folder', help='The absolute path to the configs folder', default = '../configs/')
@@ -45,12 +46,16 @@ def main():
 
     # create the trainer object
     trainer = NoveltyGANTrainer(novelty_gan, data, config)
+    trainer = NoveltyGANTrainer(novelty_gan, data, config)
 
     # loss = trainer.train_step_gan()
     # loss = trainer.train_step(train_on_real_data=True)
     # print("loss = ", loss)
 
-    trainer.train_epoch()
+    for epoch_id in range(config.num_epochs):
+        loss = trainer.train_epoch(epoch_id)
+
+    # novelty_gan.gan.summary()
 
     # Sanity check: works.
     """
