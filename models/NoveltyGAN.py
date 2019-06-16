@@ -75,8 +75,8 @@ class NoveltyGAN():
 
         # Discriminator receives two inputs: label map and image
         # Note: we are using channel last convention
-        label_input = Input(shape=(None, None, self.generator_output_classes))
-        img_input = Input(shape=(None, None, 3))
+        label_input = Input(shape=(128, 256, self.generator_output_classes))
+        img_input = Input(shape=(1024, 2048, 3))
 
         # Left branch
         conv_left_1 = Conv2D(64, (5, 5), activation='relu', name='conv_left_1', padding='same')(label_input)
@@ -135,15 +135,20 @@ class NoveltyGAN():
         conv_6 = Conv2D(1024, (3, 3), activation='relu', name='conv_6', padding='same')(pool_5)
         pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
         # (4, 8, 512) -> (2, 4, 1024)
+
+        """
         conv_7 = Conv2D(1024, (3, 3), activation='relu', name='conv_7', padding='same')(pool_6)
         pool_7 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_7')(conv_7)
         # (2, 4, 10124) -> (1, 2, 1024)
-        conv_8 = Conv2D(1, (1, 1), name='conv_8', padding='valid')(pool_7)
+        conv_8 = Conv2D(1, (1, 1), name='conv_8', activation='relu', padding='valid')(pool_7)
         # (1, 2, 1024) -> (1, 2, 1)
+        """
 
-        # Flatten the output of the conv layer to obtain two outputs
-        # corresponding to the two classes real/fake
-        out = Flatten()(conv_8)
+        # Flatten the output of the conv layer
+        flattened = Flatten()(pool_6)
+
+        # FC + Sigmoid to obtain single output (= probability that input is sampled from real distribution)
+        out = Dense(units=1, activation='sigmoid')(flattened)
 
         discriminator = Model(inputs=[label_input, img_input], outputs=out, name="discriminator")
         discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
@@ -206,7 +211,7 @@ class NoveltyGAN():
 
             weight_value_tuples[14] = [weightFC1W, weightFC1b]
 
-        rgb_input = Input(shape=(None, None, 3), name="rgb_input")
+        rgb_input = Input(shape=(1024, 2048, 3), name="rgb_input")
         # input_shape = (1024,2048)
 
         conv1_1 = Conv2D(int(64 * self.alpha), (3, 3), activation='relu', name="conv1_1",
@@ -349,7 +354,7 @@ class NoveltyGAN():
     def build_gan(self):
         self.discriminator.trainable = False
         # label_input = Input(shape=(None, None, self.generator_output_classes))
-        img_input = Input(shape=(None, None, 3), name="gan_input")
+        img_input = Input(shape=(1024, 2048, 3), name="gan_input")
         x = self.generator(img_input)
         # Note: we treat the output of the generator for img_input as input to discriminator
         gan_output = self.discriminator([x, img_input])
