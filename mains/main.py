@@ -41,49 +41,21 @@ def main():
     # create novelty GAN
     novelty_gan = NoveltyGAN(generator_output_classes=cfg.OUTPUT_CLASSES, fcn=True, upsampling=False, alpha=0.25,
                              imagenet_filepath=IMAGENET_FILEPATH, model_filepath=MODEL_FILEPATH)
-
+    
     # create the trainer object
     trainer = NoveltyGANTrainer(novelty_gan, data, config)
-    trainer = NoveltyGANTrainer(novelty_gan, data, config)
-
-    # loss = trainer.train_step_gan()
-    # loss = trainer.train_step(train_on_real_data=True)
-    # print("loss = ", loss)
 
     for epoch_id in range(config.num_epochs):
         loss = trainer.train_epoch(epoch_id)
 
     # novelty_gan.gan.summary()
 
-    # Sanity check: works.
-    """
-    for batch in data.next_batch(3):
-        labels_batch = novelty_gan.generator.predict_on_batch(batch[0])
-        print("Image from batch:", batch[0].shape)
-        print("Ground truth labels:", batch[1].shape)
-        print("Predicted labels:", labels_batch.shape)
-        # isReal = novelty_gan.discriminator.predict_on_batch([batch[1], batch[0]])
-        # isReal = novelty_gan.discriminator.predict_on_batch([labels_batch, batch[0]])
-        isReal = novelty_gan.gan.predict_on_batch(batch[0])
-        print("discriminator prediction for ground-truth:", isReal.shape)
-    """
-
-    # Yet another sanity check for training.
-    """
-    for batch in data.next_batch(3):
-        img_batch = batch[0]
-        labels_batch = batch[1]
-        # predicted_labels_batch = novelty_gan.generator.predict_on_batch(img_batch)
-        target = np.zeros((3, 2))
-        target[:, 0] = 1
-        loss = novelty_gan.discriminator.train_on_batch([labels_batch, img_batch], target)
-        print(loss)
-    """
-
     if 0:
         print('_________________')
         print(cfg)
         print('_________________')
+
+
 if __name__ == '__main__':
 
     main()

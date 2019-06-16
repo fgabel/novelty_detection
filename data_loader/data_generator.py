@@ -43,10 +43,10 @@ class DataGenerator:
 
             X.append(image_data_volume)
             Y.append(label_data)
-            # yield np.array(X), np.array(Y)
+            #yield np.array(X), np.array(Y)
         # Where is yield supposed to be?
-        # yield np.array(X), np.array(Y)
-        return np.array(X), np.array(Y)
+        yield np.array(X), np.array(Y)
+        # return np.array(X), np.array(Y)
 
 def get_training_data_list(training_folder_images_path, images_suffix):
     """
