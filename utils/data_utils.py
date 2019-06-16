@@ -5,9 +5,7 @@ import numpy as np
 
 def load_image(dataset_type, data_name, dataset_folders, images_directory_name, images_suffix):
     folder_images_path = dataset_folders[dataset_type] + "/" + images_directory_name
-
     image_filename = folder_images_path + "/" + data_name + images_suffix
-    print(image_filename)
     image = skimage.io.imread(image_filename).astype(np.float32)
 
     return image
