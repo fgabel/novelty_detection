@@ -10,7 +10,6 @@ from utils.config import process_config, get_config_from_json
 from utils.dirs import create_dirs
 from utils.logger import Logger
 
-# from utils.utils import get_args
 import os
 
 parser = argparse.ArgumentParser()
