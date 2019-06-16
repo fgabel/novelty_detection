@@ -47,6 +47,12 @@ def main():
     for epoch_id in range(config.num_epochs):
         loss = trainer.train_epoch(epoch_id)
 
+    """
+    img_batch, label_batch = next(data.next_batch(10))
+    pred = novelty_gan.gan.predict_on_batch(img_batch)
+    print("DEBUG", pred)
+    """
+
     # novelty_gan.gan.summary()
 
     if 0:

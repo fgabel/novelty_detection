@@ -148,7 +148,7 @@ class NoveltyGAN():
         flattened = Flatten()(pool_6)
 
         # FC + Sigmoid to obtain single output (= probability that input is sampled from real distribution)
-        out = Dense(units=1, activation='sigmoid')(flattened)
+        out = Dense(units=2, activation='softmax')(flattened)
 
         discriminator = Model(inputs=[label_input, img_input], outputs=out, name="discriminator")
         discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())

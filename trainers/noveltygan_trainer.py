@@ -68,16 +68,17 @@ class NoveltyGANTrainer():
         self.gan_model.discriminator.trainable = True
 
         img_batch, labels_batch = None, None
-        discriminator_ground_truth = np.zeros(self.config.batch_size)
+        discriminator_ground_truth = np.zeros((self.config.batch_size, 2))
 
         if train_on_real_data:
             # Pick a pair of images and ground truth labels from data generator
             img_batch, labels_batch = next(self.data.next_batch(self.config.batch_size))
-            discriminator_ground_truth.fill(0.99)
+            discriminator_ground_truth[:, 0] = 0.99
         else:
             # Let generator generate fake seg maps for another image batch
             img_batch, _ = next(self.data.next_batch(self.config.batch_size))
             labels_batch = self.gan_model.generator.predict(img_batch)
+            discriminator_ground_truth[:, 1] = 0.99
 
         discriminator_input = [labels_batch, img_batch]
 
@@ -99,7 +100,8 @@ class NoveltyGANTrainer():
         # Pick some images from TS
         # Let generator generate fake seg maps (internally) and treat them as true labels
         img_batch, _ = next(self.data.next_batch(self.config.batch_size))
-        gan_supervision = np.ones(self.config.batch_size)
+        gan_supervision = np.zeros((self.config.batch_size, 2))
+        gan_supervision[:, 0] = 0.99
 
         # Train the GAN (i.e. the generator) with fixed weights of discriminator
         logs = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
