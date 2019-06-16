@@ -13,8 +13,6 @@ from utils.logger import Logger
 # from utils.utils import get_args
 import os
 
-from trainers.noveltygan_trainer import named_logs
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--config_folder', help='The absolute path to the configs folder', default = '../configs/')
 args = parser.parse_args()

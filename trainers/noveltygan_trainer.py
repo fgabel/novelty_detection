@@ -26,7 +26,14 @@ class NoveltyGANTrainer():
             write_graph=True,
             write_grads=True
         )
+        self.modelcheckpoint = tf.keras.callbacks.ModelCheckpoint(
+            filepath=os.path.join("../experiments", self.config.exp_name, "checkpoint/cp-{epoch:04d}.ckpt"),
+            save_weights_only=True,
+            period=0
+        )
+
         self.tensorboard.set_model(self.gan_model.gan)
+        self.modelcheckpoint.set_model(self.gan_model.gan)
 
     def train_epoch(self, id=0):
         loop = tqdm(range(self.config.num_iter_per_epoch))
@@ -37,13 +44,11 @@ class NoveltyGANTrainer():
 
         logs_avg = np.mean(logs, axis = 0)
 
-        # TODO: Do something with the loss here (maybe try to obtain accuracy aswell)
-        # ...
-
-        # TODO: improve on saving the weights here
-        self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
+        # self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
 
         self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg))
+        # TODO: we need to keep track of validation accuracy
+        self.modelcheckpoint.on_epoch_end(id)
 
         return 0
 
