@@ -50,6 +50,19 @@ class NoveltyGANTrainer():
         # TODO: we need to keep track of validation accuracy
         self.modelcheckpoint.on_epoch_end(id)
 
+        if 1: # print images
+            img_batch, _ = self.data.next_batch(batch_size=1)
+
+            # Train the GAN (i.e. the generator) with fixed weights of discriminator
+            generated_images = self.gan_model.generator(img_batch)
+
+            logdir = "../experiments/example/summary" + datetime.now().strftime("%Y%m%d-%H%M%S")
+            # Creates a file writer for the log directory.
+            file_writer = tf.summary.FileWriter(logdir)
+            with file_writer:
+                tf.summary.image("VGG segmentation maps", generated_images)
+                tf.summary.image("Raw data", img_batch)
+
         return 0
 
     def train_step_discriminator(self, train_on_real_data = True):
