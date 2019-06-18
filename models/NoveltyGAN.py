@@ -71,9 +71,16 @@ class NoveltyGAN():
         self.build_gan()
 
     def build_discriminator(self):
-        """from the paper adversarial ..."""
+        """ Discriminator from the paper "Semantic Segmentation using Adversarial Networks" (https://arxiv.org/pdf/1611.08408.pdf)
 
-        # Discriminator receives two inputs: label map and image
+            It receives two inputs: a segmentation map and an actual corresponding image and outputs a probability for
+            the segmentation map coming from a generator or from the ground truth.
+
+            Returns:
+                compiled discriminator model
+        """
+
+
         # Note: we are using channel last convention
         label_input = Input(shape=(None, None, self.generator_output_classes))
         img_input = Input(shape=(None, None, 3))
@@ -151,7 +158,13 @@ class NoveltyGAN():
         self.discriminator = discriminator
 
     def build_generator(self):
-        """VGG"""
+        """ VGG 16 with both a classification and a segmentation head
+
+            It receives as input (a batch of) images and outputs a segmentation map for each of them.
+
+            Returns:
+                compiled generator model
+        """
 
         weight_value_tuples = []
 
