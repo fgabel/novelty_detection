@@ -28,6 +28,7 @@ from utils.layer_utils import Softmax4D
 
 # Note: this method is just placeholder by now
 # TODO: add an additional moduke for handling optimizers
+
 def adam_optimizer():
     return Adam(lr=0.0001, beta_1=0.99, beta_2=0.999, epsilon=1e-6)
 
@@ -42,6 +43,17 @@ def gen_random(mode, size):
 
 
 class NoveltyGAN():
+    """ Main model class, encompassing generator and discriminator.
+
+    Attributes:
+        generator_output_classes: number of segmentation classes of the generator
+        fcn: Flag for the classification head / segmentation head
+        upsampling: Flag for upsampling the segmentation maps from (128, 256) to (1024,2048)
+        alpha:
+        imagenet_filepath: Path to pretrained imagenet model
+        model_filepath: Path to checkpointed model
+        num_filters: Network hyperparameter in the fcn head
+    """
     def __init__(self, generator_output_classes=1000, fcn=False, upsampling=False, alpha=1, imagenet_filepath=None,
                  model_filepath=None):
         super().__init__()
@@ -55,19 +67,15 @@ class NoveltyGAN():
         self.model_filepath = model_filepath
         # TODO: set self.num_filters accordingly (see down below); dummy initialization by now
         self.num_filters = 32
-
         # Setup generator and discriminator
 
         self.generator = None
         self.discriminator = None
-
         self.build_generator()
         self.build_discriminator()
 
         # Stick generator and discriminator together to obtain the GAN
-
         self.gan = None
-
         self.build_gan()
 
     def build_discriminator(self):
@@ -142,15 +150,19 @@ class NoveltyGAN():
         conv_6 = Conv2D(1024, (3, 3), activation='relu', name='conv_6', padding='same')(pool_5)
         pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
         # (4, 8, 512) -> (2, 4, 1024)
+        """
         conv_7 = Conv2D(1024, (3, 3), activation='relu', name='conv_7', padding='same')(pool_6)
         pool_7 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_7')(conv_7)
         # (2, 4, 10124) -> (1, 2, 1024)
         conv_8 = Conv2D(1, (1, 1), name='conv_8', padding='valid')(pool_7)
         # (1, 2, 1024) -> (1, 2, 1)
-
+        """
         # Flatten the output of the conv layer to obtain two outputs
         # corresponding to the two classes real/fake
-        out = Flatten()(conv_8)
+        flattened = Flatten()(pool_6)
+
+        # FC + Sigmoid to obtain single output (= probability that input is sampled from real distribution)
+        out = Dense(units=2, activation='softmax')(flattened)
 
         discriminator = Model(inputs=[label_input, img_input], outputs=out, name="discriminator")
         discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
@@ -360,6 +372,7 @@ class NoveltyGAN():
 
 
     def build_gan(self):
+        """Method to combine discriminator and generator into a GAN"""
         self.discriminator.trainable = False
         # label_input = Input(shape=(None, None, self.generator_output_classes))
         img_input = Input(shape=(None, None, 3), name="gan_input")
