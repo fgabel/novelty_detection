@@ -4,7 +4,54 @@ import numpy as np
 from datetime import datetime
 import os
 
+from io import StringIO, BytesIO
+import matplotlib.pyplot as plt
+
 import tensorflow as tf
+
+"""
+    Experimental BEGIN
+"""
+
+class TensorBoardImage(tf.keras.callbacks.Callback):
+    def __init__(self, tag, logs_dir):
+        super().__init__()
+        self.tag = tag
+        self.logs_dir = logs_dir
+        self.writer = tf.summary.FileWriter(self.logs_dir)
+
+    def on_epoch_end(self, epoch, logs={}):
+        img_batch = logs["image_batch"]
+        batch_size, h, w, c = img_batch.shape
+        im_summaries = []
+        for nr in range(batch_size):
+            # TODO: transform image batch ...
+            # img = img_batch[nr,:,:]
+            # ... into an RGB image
+            # NOTE: only dummy image created by now
+            img = np.zeros((h,w))
+            # Write the image to a string
+            s = BytesIO()
+            plt.imsave(s, img, format='png')
+
+            # Create an Image object
+            img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
+                                       height=h,
+                                       width=w)
+            # Create a Summary value
+            im_summaries.append(tf.Summary.Value(tag='%s/%d' % (self.tag, nr),
+                                                 image=img_sum))
+
+        # Create and write Summary
+        summary = tf.Summary(value=im_summaries)
+        self.writer.add_summary(summary, epoch)
+
+        return
+
+"""
+    Experimental END
+"""
+
 
 def named_logs(model, logs):
     """
@@ -25,12 +72,17 @@ class NoveltyGANTrainer():
             histogram_freq=0,
             batch_size=self.config.batch_size,
             write_graph=True,
-            write_grads=True
+            write_grads=True,
+            write_images=True
         )
         self.modelcheckpoint = tf.keras.callbacks.ModelCheckpoint(
             filepath=os.path.join("../experiments", self.config.exp_name, "checkpoint/cp-{epoch:04d}.ckpt"),
             save_weights_only=True,
             period=0
+        )
+        self.tensorboardimage = TensorBoardImage(
+            "Test",
+            logs_dir=os.path.join("../experiments", self.config.exp_name, "summary")
         )
 
         self.tensorboard.set_model(self.gan_model.gan)
@@ -54,15 +106,19 @@ class NoveltyGANTrainer():
         if 1: # print images
             img_batch, _ = self.data.next_batch(batch_size=1)
 
-            # Train the GAN (i.e. the generator) with fixed weights of discriminator
-            generated_images = self.gan_model.generator(img_batch)
+            generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
 
-            logdir = "../experiments/example/summary" + datetime.now().strftime("%Y%m%d-%H%M%S")
+            self.tensorboardimage.on_epoch_end(id, {'image_batch': generated_segmaps})
+
+            """
+            # logdir = "../experiments/example/summary" + datetime.now().strftime("%Y%m%d-%H%M%S")
+            logdir = "../experiments/example/summary"
             # Creates a file writer for the log directory.
             file_writer = tf.summary.FileWriter(logdir)
             with file_writer:
-                tf.summary.image("VGG segmentation maps", generated_images)
+                tf.summary.image("VGG segmentation maps", generated_segmaps)
                 tf.summary.image("Raw data", img_batch)
+            """
 
         return 0
 
