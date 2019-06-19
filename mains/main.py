@@ -44,7 +44,6 @@ def main():
 
     # create the trainer object
     trainer = NoveltyGANTrainer(novelty_gan, data, config)
-    trainer = NoveltyGANTrainer(novelty_gan, data, config)
 
     # loss = trainer.train_step_gan()
     # loss = trainer.train_step(train_on_real_data=True)

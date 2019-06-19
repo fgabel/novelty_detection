@@ -90,8 +90,8 @@ class NoveltyGAN():
 
 
         # Note: we are using channel last convention
-        label_input = Input(shape=(None, None, self.generator_output_classes))
-        img_input = Input(shape=(None, None, 3))
+        label_input = Input(shape=(128, 256, self.generator_output_classes))
+        img_input = Input(shape=(1024, 2048, 3))
 
         # Left branch
         conv_left_1 = Conv2D(64, (5, 5), activation='relu', name='conv_left_1', padding='same')(label_input)
@@ -162,7 +162,7 @@ class NoveltyGAN():
         flattened = Flatten()(pool_6)
 
         # FC + Sigmoid to obtain single output (= probability that input is sampled from real distribution)
-        out = Dense(units=2, activation='softmax')(flattened)
+        out = Dense(units=1, activation='sigmoid')(flattened)
 
         discriminator = Model(inputs=[label_input, img_input], outputs=out, name="discriminator")
         discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
