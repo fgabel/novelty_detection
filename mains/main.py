@@ -19,7 +19,6 @@ args = parser.parse_args()
 
 import numpy as np
 
-
 def main():
     # capture the config path from the run arguments
     # then process the json configuration file

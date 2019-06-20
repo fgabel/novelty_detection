@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 
+from utils.data_utils import binary_labels_to_image
+from utils.data_utils import COLOR_PALETTE
+
 """
     Experimental BEGIN
 """
@@ -21,30 +24,27 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
         self.writer = tf.summary.FileWriter(self.logs_dir)
 
     def on_epoch_end(self, epoch, logs={}):
-        img_batch = logs["image_batch"]
-        batch_size, h, w, c = img_batch.shape
-        im_summaries = []
+        generated_segmaps = logs["generated_segmaps"]
+
+        batch_size, h, w, c = generated_segmaps.shape
+        seg_summaries = []
+
         for nr in range(batch_size):
-            # TODO: transform image batch ...
-            # img = img_batch[nr,:,:]
-            # ... into an RGB image
-            # NOTE: only dummy image created by now
-            img = np.zeros((h,w))
+            seg = binary_labels_to_image(generated_segmaps[nr], color_palette=COLOR_PALETTE)
             # Write the image to a string
             s = BytesIO()
-            plt.imsave(s, img, format='png')
-
+            plt.imsave(s, seg, format='png')
             # Create an Image object
-            img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
+            seg_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
                                        height=h,
                                        width=w)
             # Create a Summary value
-            im_summaries.append(tf.Summary.Value(tag='%s/%d' % (self.tag, nr),
-                                                 image=img_sum))
+            seg_summaries.append(tf.Summary.Value(tag='seg_%s/%d' % (self.tag, nr),
+                                                 image=seg_sum))
 
         # Create and write Summary
-        summary = tf.Summary(value=im_summaries)
-        self.writer.add_summary(summary, epoch)
+        seg_summary = tf.Summary(value=seg_summaries)
+        self.writer.add_summary(seg_summary, epoch)
 
         return
 
@@ -81,7 +81,7 @@ class NoveltyGANTrainer():
             period=0
         )
         self.tensorboardimage = TensorBoardImage(
-            "Test",
+            tag="Test",
             logs_dir=os.path.join("../experiments", self.config.exp_name, "summary")
         )
 
@@ -104,11 +104,11 @@ class NoveltyGANTrainer():
         self.modelcheckpoint.on_epoch_end(id)
 
         if 1: # print images
-            img_batch, _ = self.data.next_batch(batch_size=1)
+            img_batch, label_batch = self.data.next_batch(batch_size=1)
 
             generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
 
-            self.tensorboardimage.on_epoch_end(id, {'image_batch': generated_segmaps})
+            self.tensorboardimage.on_epoch_end(id, {'generated_segmaps': generated_segmaps})
 
             """
             # logdir = "../experiments/example/summary" + datetime.now().strftime("%Y%m%d-%H%M%S")
