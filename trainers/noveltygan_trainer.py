@@ -114,7 +114,7 @@ class NoveltyGANTrainer():
         # self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
 
         self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg))
-        # TODO: we need to keep track of validation accuracy
+
         self.modelcheckpoint.on_epoch_end(id)
 
         if 1: # print images
@@ -133,7 +133,10 @@ class NoveltyGANTrainer():
                 tf.summary.image("VGG segmentation maps", generated_segmaps)
                 tf.summary.image("Raw data", img_batch)
             """
-
+        # TODO: This is just printing accuracies, but we want to track in tensorboard
+        img_batch, label_batch = self.data.next_batch(batch_size=5) # TODO: mode = "validation", but the data is not in the right format yet
+        results = self.gan_model.gan.evaluate(img_batch, np.ones(5))
+        print('test loss, test acc:', results)
         return 0
 
     def train_step_discriminator(self, train_on_real_data = True):
