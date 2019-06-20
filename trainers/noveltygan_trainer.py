@@ -1,9 +1,9 @@
 from tqdm import tqdm
 import numpy as np
-
+from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
 import os
-
+import cv2
 from io import StringIO, BytesIO
 import matplotlib.pyplot as plt
 
@@ -25,19 +25,32 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         generated_segmaps = logs["generated_segmaps"]
-
+        image = logs["corresponding_image"]
         batch_size, h, w, c = generated_segmaps.shape
         seg_summaries = []
 
         for nr in range(batch_size):
             seg = binary_labels_to_image(generated_segmaps[nr], color_palette=COLOR_PALETTE)
+            im = cv2.resize(image[nr], dsize=(256, 128), interpolation=cv2.INTER_CUBIC)
+            output_real_images = 1
+            if output_real_images == 1: #whether to add real images to output segmaps or not
+                scaler = MinMaxScaler(feature_range=(0.01,0.99))
+                im[: ,: ,0] = scaler.fit_transform(im[: ,:,0])
+                im[:, :, 1] = scaler.fit_transform(im[:, :, 1])
+                im[:, :, 2] = scaler.fit_transform(im[:, :, 2])
+                res = np.zeros((seg.shape[0], seg.shape[1]*2, 3))
+                res[:, 0:seg.shape[1], :] = seg
+                res[:, seg.shape[1]:, :] = im
+                plt.imsave(s, res, format='png')
+            else:
+                plt.imsave(s, seg, format='png')
             # Write the image to a string
             s = BytesIO()
-            plt.imsave(s, seg, format='png')
+
             # Create an Image object
             seg_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
                                        height=h,
-                                       width=w)
+                                       width=(1 + output_real_images)*w) # double width if we want real images
             # Create a Summary value
             seg_summaries.append(tf.Summary.Value(tag='seg_%s/%d' % (self.tag, nr),
                                                  image=seg_sum))
@@ -108,7 +121,7 @@ class NoveltyGANTrainer():
 
             generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
 
-            self.tensorboardimage.on_epoch_end(id, {'generated_segmaps': generated_segmaps})
+            self.tensorboardimage.on_epoch_end(id, {'generated_segmaps': generated_segmaps, 'corresponding_image': img_batch})
 
             """
             # logdir = "../experiments/example/summary" + datetime.now().strftime("%Y%m%d-%H%M%S")
