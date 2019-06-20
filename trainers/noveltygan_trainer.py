@@ -32,6 +32,7 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
         for nr in range(batch_size):
             seg = binary_labels_to_image(generated_segmaps[nr], color_palette=COLOR_PALETTE)
             im = cv2.resize(image[nr], dsize=(256, 128), interpolation=cv2.INTER_CUBIC)
+            s = BytesIO()
             output_real_images = 1
             if output_real_images == 1: #whether to add real images to output segmaps or not
                 scaler = MinMaxScaler(feature_range=(0.01,0.99))
@@ -45,7 +46,7 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
             else:
                 plt.imsave(s, seg, format='png')
             # Write the image to a string
-            s = BytesIO()
+
 
             # Create an Image object
             seg_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
