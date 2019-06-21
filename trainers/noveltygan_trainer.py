@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 
-from utils.data_utils import binary_labels_to_image
+from utils.data_utils import binary_labels_to_image, softmax_output_to_binary_labels
 from utils.data_utils import COLOR_PALETTE
 
 """
@@ -122,7 +122,10 @@ class NoveltyGANTrainer():
 
             generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
 
-            self.tensorboardimage.on_epoch_end(id, {'generated_segmaps': generated_segmaps, 'corresponding_image': img_batch})
+            self.tensorboardimage.on_epoch_end(id, {
+                'generated_segmaps': softmax_output_to_binary_labels(generated_segmaps),
+                'corresponding_image': img_batch
+            })
 
             """
             # logdir = "../experiments/example/summary" + datetime.now().strftime("%Y%m%d-%H%M%S")
