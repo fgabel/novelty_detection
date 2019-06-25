@@ -11,7 +11,7 @@ import tensorflow as tf
 
 from utils.data_utils import binary_labels_to_image, softmax_output_to_binary_labels
 from utils.data_utils import COLOR_PALETTE
-
+from utils.utils import calculate_confusion_matrix, normalize_confusion_matrix, evaluate_confusion_matrix
 """
     Experimental BEGIN
 """
@@ -140,6 +140,12 @@ class NoveltyGANTrainer():
         img_batch, label_batch = self.data.next_batch(batch_size=5) # TODO: mode = "validation", but the data is not in the right format yet
         results = self.gan_model.gan.evaluate(img_batch, np.ones(5))
         print('test loss, test acc:', results)
+        if 0:
+            # TODO: debug
+            pred_batch = self.gan_model.generator(img_batch) # (5, 128, 256, 19)
+
+            calculate_confusion_matrix(pred_batch, label_batch)
+
         return 0
 
     def train_step_discriminator(self, train_on_real_data = True):
