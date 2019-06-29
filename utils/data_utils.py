@@ -3,6 +3,13 @@ import skimage.transform
 import skimage.io
 import numpy as np
 
+from utils.numpy_utils import scatter_numpy
+
+COLOR_PALETTE = [(119, 11, 32), (70, 70, 70), (0, 60,100), ( 0, 0, 142), (190, 153, 153), (0, 0, 230),
+                 (220, 20, 60), (153, 153, 153), (255, 0, 0), (128, 64, 128), (244, 35, 232), (70, 130, 180),
+                 (152, 251, 152), (250, 170, 30), (220, 220, 0), (0, 80, 100), (0, 0, 70), (107, 142, 35),
+                 (102,102,156)]
+
 def load_image(dataset_type, data_name, dataset_folders, images_directory_name, images_suffix):
     folder_images_path = dataset_folders[dataset_type] + "/" + images_directory_name
     image_filename = folder_images_path + "/" + data_name + images_suffix
@@ -58,3 +65,33 @@ def get_binary_label_data(dataset_type, data_name, dataset_folders, classes_dire
     return binarize_labels(get_label_data(
         dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix
     ), output_classes=output_classes)
+
+def binary_labels_to_image(binary_labels, color_palette):
+    """
+    Creates an RGB image from a inbary label map
+    :param binary_labels: A binary label map of shape (H, W, C)
+    :param color_palette: A color palette corresponding to the C channels of the label map
+    :return: A numpy array of shape (H, W, 3) (the resulting RGB image)
+    """
+    H, W, C = binary_labels.shape
+    img = np.zeros((C, H, W, 3), dtype=np.float32)
+    indices = binary_labels == 1
+    for c in range(C):
+        img[c, indices[:, :, c]] = color_palette[c]
+    img /= 255.
+    return np.sum(img, axis=0)
+
+def softmax_output_to_binary_labels(softmax_labels):
+    """
+    Transforms a softmax output map into a binary label map
+    :param softmax_labels: A numpy array of shape (N,H,W,C)
+    :return: A numpy array of shape (N,H,W,C), the resulting binary label maps
+    """
+    N, H, W, C = softmax_labels.shape
+    indices = np.argmax(softmax_labels, axis = 3)
+    binary_maps = []
+    for nr in range(N):
+        indices_batch = np.repeat(indices[nr, :, :, np.newaxis], C, axis=2).astype(int)
+        binary_labels = scatter_numpy(np.zeros((H, W, C)), 2, indices_batch, np.ones((H, W, C)))
+        binary_maps.append(binary_labels)
+    return np.array(binary_maps)
