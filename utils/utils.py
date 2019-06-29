@@ -1,9 +1,9 @@
 import argparse
 import skimage.transform
 import skimage.io
-
-
-
+import numpy as np
+from tensorflow.math import argmax
+from tensorflow.keras.backend import flatten
 
 
 def get_args():
@@ -17,28 +17,27 @@ def get_args():
     return args
 
 
-fcn_iou_function = K.function([vgg16.model.get_layer("rgb_input").input, K.learning_phase()],
-                              [vgg16.model.get_layer("softmax_output").output])
 
 
-def calculate_confusion_matrix():
+
+def calculate_confusion_matrix(pred_batch, label_batch):
     # 19 output classes
-    bins = np.arange(-0.5, OUTPUT_CLASSES, 1)
+    OUTPUT_CLASSES = 19
+    bins = np.arange(-0.5, OUTPUT_CLASSES-1, 1)
     confusion_matrix = np.zeros([OUTPUT_CLASSES, OUTPUT_CLASSES], dtype=np.longlong)
+    for i in range(label_batch.shape[0]):  # iterate through batch size
+        print(label_batch[i].shape)
+        gt_label_data = np.argmax(label_batch[i], 2).flatten()
 
-    for i in range(len(validation_data_name_list)):
-        image_data_volume_batch, label_data_batch = next(validation_dataset_generator)
-
-        pred_label_data_batch = fcn_iou_function([image_data_volume_batch, 0])[0][0]
-        gt_label_data = label_data_batch[0].flatten()
-
-        pred_label_data = np.argmax(pred_label_data_batch, 2).flatten()
-
+        pred_label_data = flatten(argmax(pred_batch[i], 2)) #
+        print(pred_label_data)
+        print(gt_label_data) #32768
+        print(bins.shape)
         cM, a, b = np.histogram2d(pred_label_data, gt_label_data, bins=bins)
 
         confusion_matrix = confusion_matrix + np.asarray(cM, dtype=np.longlong)
 
-    print(confusion_matrix.shape)
+
 
     return confusion_matrix
 
