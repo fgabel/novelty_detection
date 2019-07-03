@@ -150,12 +150,21 @@ class NoveltyGANTrainer():
             if 1:
                 fcn_iou_function = K.function([self.gan_model.generator.get_layer("rgb_input").input, K.learning_phase()],
                     [self.gan_model.generator.get_layer("softmax_output").output])
-                pred_batch = fcn_iou_function([img_batch, 0])[0][0]
-                print("predbatch shape", pred_batch.shape)
+                pred_batch = fcn_iou_function([img_batch, 0])[0]
+
                 # Generator evaluation in terms of IoU and stuff # TODO does not work yet
                 #pred_batch = self.gan_model.generator(img_batch)  # (5, 128, 256, 19)
 
-                calculate_confusion_matrix(pred_batch, label_batch)
+
+                confusion_matrix = calculate_confusion_matrix(pred_batch, label_batch)
+                eval_out ={}
+                eval_out['confMatrix'] = confusion_matrix
+
+                eval_out['norm_confMatrix'] = normalize_confusion_matrix(confusion_matrix)
+
+                [pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
+                 class_TNR] = evaluate_confusion_matrix(confusion_matrix)
+                metrics_dict['validation IoU'] = np.mean(class_IoU)
 
         evaluation_loop()
 

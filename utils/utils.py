@@ -29,13 +29,8 @@ def calculate_confusion_matrix(pred_batch, label_batch):
 
         gt_label_data = np.argmax(label_batch[i], 2).flatten()
 
-        pred_label_data = flatten(pred_batch[i]) #
+        pred_label_data = np.argmax(pred_batch[i], 2).flatten() #
 
-        gt_label_data = [i+1 for i in gt_label_data]
-
-        print(np.unique(pred_label_data))
-        print(np.unique(gt_label_data))
-        print(bins)
         cM, a, b = np.histogram2d(pred_label_data, gt_label_data, bins=bins)
 
         confusion_matrix = confusion_matrix + np.asarray(cM, dtype=np.longlong)
@@ -48,17 +43,17 @@ def normalize_confusion_matrix(confusion_matrix):
     normalized_confusion_matrix = np.zeros(confusion_matrix.shape, dtype=np.float)
     sum_over_columns = np.sum(confusion_matrix, 0)
     sum_over_columns = np.maximum(sum_over_columns, 1)
-    for i in range(OUTPUT_CLASSES):
+    for i in range(19):
         normalized_confusion_matrix[:, i] = confusion_matrix[:, i].astype(np.float) / float(sum_over_columns[i])
     return normalized_confusion_matrix
 
 def evaluate_confusion_matrix( confusion_matrix):
-	class_TP = np.zeros([OUTPUT_CLASSES], dtype=np.int64)
-	class_FP = np.zeros([OUTPUT_CLASSES], dtype=np.int64)
-	class_TN = np.zeros([OUTPUT_CLASSES], dtype=np.int64)
-	class_FN = np.zeros([OUTPUT_CLASSES], dtype=np.int64)
+	class_TP = np.zeros([19], dtype=np.int64)
+	class_FP = np.zeros([19], dtype=np.int64)
+	class_TN = np.zeros([19], dtype=np.int64)
+	class_FN = np.zeros([19], dtype=np.int64)
 	pixels = np.sum(confusion_matrix.flatten())
-	for idx in range(OUTPUT_CLASSES):
+	for idx in range(19):
 		class_TP[idx] = confusion_matrix[idx, idx]
 		class_FN[idx] = np.sum(confusion_matrix[:, idx]) - class_TP[idx]
 		class_FP[idx] = np.sum(confusion_matrix[idx, :]) - class_TP[idx]
@@ -68,7 +63,7 @@ def evaluate_confusion_matrix( confusion_matrix):
 	class_F1 = []
 	class_TPR = []
 	class_TNR = []
-	for i in range(OUTPUT_CLASSES):
+	for i in range(19):
 		if class_TP[i] == 0:
 			class_IoU.append(0.0)
 			class_F1.append(0.0)
