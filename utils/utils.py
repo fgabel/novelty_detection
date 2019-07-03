@@ -23,16 +23,19 @@ def get_args():
 def calculate_confusion_matrix(pred_batch, label_batch):
     # 19 output classes
     OUTPUT_CLASSES = 19
-    bins = np.arange(-0.5, OUTPUT_CLASSES-1, 1)
+    bins = np.arange(-0.5, OUTPUT_CLASSES, 1)
     confusion_matrix = np.zeros([OUTPUT_CLASSES, OUTPUT_CLASSES], dtype=np.longlong)
     for i in range(label_batch.shape[0]):  # iterate through batch size
-        print(label_batch[i].shape)
+
         gt_label_data = np.argmax(label_batch[i], 2).flatten()
 
-        pred_label_data = flatten(argmax(pred_batch[i], 2)) #
-        print(pred_label_data)
-        print(gt_label_data) #32768
-        print(bins.shape)
+        pred_label_data = flatten(pred_batch[i]) #
+
+        gt_label_data = [i+1 for i in gt_label_data]
+
+        print(np.unique(pred_label_data))
+        print(np.unique(gt_label_data))
+        print(bins)
         cM, a, b = np.histogram2d(pred_label_data, gt_label_data, bins=bins)
 
         confusion_matrix = confusion_matrix + np.asarray(cM, dtype=np.longlong)

@@ -8,6 +8,7 @@ from io import StringIO, BytesIO
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
+import tensorflow.keras.backend as K
 
 from utils.data_utils import binary_labels_to_image, softmax_output_to_binary_labels
 from utils.data_utils import COLOR_PALETTE
@@ -69,13 +70,16 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
 """
 
 
-def named_logs(model, logs):
+def named_logs(model, logs, metrics_dict = None):
     """
     github.com/erenon
+    metrics_dict: an optional argument that entails metrics that are to be used optionally
     """
     result = {}
-    for l in zip(model.metrics_names, logs):
-        result[l[0]] = l[1]
+    result[model.metrics_names[0]] = logs[0]
+    result[model.metrics_names[1]] = logs[1]
+    if metrics_dict:
+        result.update(metrics_dict)
     return result
 
 
@@ -114,9 +118,9 @@ class NoveltyGANTrainer():
 
         logs_avg = np.mean(logs, axis=0)
 
-        self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
-        self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg))
-        self.modelcheckpoint.on_epoch_end(id)
+        #self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
+
+        #self.modelcheckpoint.on_epoch_end(id)
 
         if 1:  # print images
             img_batch, label_batch = self.data.next_batch(batch_size=1, mode="validation")
@@ -130,20 +134,32 @@ class NoveltyGANTrainer():
 
         img_batch, label_batch = self.data.next_batch(batch_size=5,
                                                       mode="validation")
-
+        metrics_dict = dict()
         def evaluation_loop():
             """This function evaluates both the discriminator and the generator after each epoch"""
             # Discriminator evaluation on fake data
-            print("Fake data: ", self.gan_model.gan.evaluate(img_batch, np.ones(5)), "\n")
-            if 0:
-                # Discriminator evaluation on real data, #TODO does not work yet
-                print("Real data: ", self.gan_model.discriminator.evaluate([img_batch, label_batch], np.zeros(5)), "\n")
+            print("Fake data: ")
+            dis_fake = self.gan_model.gan.evaluate(img_batch, np.ones(5))
+            metrics_dict['discriminator_fake_loss'] = dis_fake[0]
+            metrics_dict['discriminator_fake_acc'] = dis_fake[1]
+            # Discriminator evaluation on real data
+            print("Real data: ")
+            dis_real = self.gan_model.discriminator.evaluate([label_batch, img_batch], np.zeros(5))
+            metrics_dict['discriminator_real_loss'] = dis_real
 
-            if 0:
+            if 1:
+                fcn_iou_function = K.function([self.gan_model.generator.get_layer("rgb_input").input, K.learning_phase()],
+                    [self.gan_model.generator.get_layer("softmax_output").output])
+                pred_batch = fcn_iou_function([img_batch, 0])[0][0]
+                print("predbatch shape", pred_batch.shape)
                 # Generator evaluation in terms of IoU and stuff # TODO does not work yet
-                pred_batch = self.gan_model.generator(img_batch)  # (5, 128, 256, 19)
+                #pred_batch = self.gan_model.generator(img_batch)  # (5, 128, 256, 19)
 
                 calculate_confusion_matrix(pred_batch, label_batch)
+
+        evaluation_loop()
+
+        self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg, metrics_dict))
 
         return 0
 
