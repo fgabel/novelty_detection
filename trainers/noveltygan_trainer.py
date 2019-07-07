@@ -110,21 +110,30 @@ class NoveltyGANTrainer():
         self.modelcheckpoint.set_model(self.gan_model.gan)
 
     def train_epoch(self, id=0):
-        loop = tqdm(range(self.config.num_iter_per_epoch))
         logs = []
         #train_loss_dt = []
         #train_loss_df = []
         train_loss_mixed = []
         metrics_dict = dict()
-        for _ in loop:
-            print("Train metrics")
-            print(self.train_step())
+
+        n_per_epoch = self.config.num_iter_per_epoch
+        n_discriminator_only = np.floor(n_per_epoch / 2).astype(int)
+        loop1 = tqdm(range(n_discriminator_only))
+        loop2 = tqdm(range(n_discriminator_only, n_per_epoch))
+
+        for _ in loop2:
+            #log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
+            train_loss_discriminator_mixed = self.train_step(train_gan=False)
+            train_loss_mixed.append(train_loss_discriminator_mixed)
+
+        for _ in loop2:
             #log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
             log_gan, train_loss_discriminator_mixed = self.train_step()
             logs.append(log_gan)
             #train_loss_dt.append(train_loss_discriminator_true)
             #train_loss_df.append(train_loss_discriminator_fake)
             train_loss_mixed.append(train_loss_discriminator_mixed)
+
         logs_avg = np.mean(logs, axis=0)
         #metrics_dict['train loss discriminator on true data'] = np.mean(train_loss_dt)
         #metrics_dict['train loss discriminator on fake data'] = np.mean(train_loss_df)
@@ -132,7 +141,7 @@ class NoveltyGANTrainer():
         #self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
         #self.modelcheckpoint.on_epoch_end(id)
 
-        if 1:  # print images
+        if 0:  # print images
             img_batch, label_batch = self.data.next_batch(batch_size=1, mode="validation")
 
             generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
@@ -195,7 +204,7 @@ class NoveltyGANTrainer():
         # TODO: Add additional control parameter for ratio of fake/real data to train on.
 
         # We need to set the discriminator trainable first
-        self.gan_model.discriminator.trainable = True
+        # self.gan_model.discriminator.trainable = True
 
         img_batch, labels_batch = None, None
         discriminator_ground_truth = np.zeros(self.config.batch_size)
@@ -231,7 +240,7 @@ class NoveltyGANTrainer():
         # During the training of gan,
         # the weights of discriminator should be fixed.
         # We can enforce that by setting the trainable flag
-        self.gan_model.discriminator.trainable = False
+        # self.gan_model.discriminator.trainable = False
 
         # Pick some images from TS
         # Let generator generate fake seg maps (internally) and treat them as true labels
@@ -243,16 +252,18 @@ class NoveltyGANTrainer():
 
         return loss
 
-    def train_step(self):
+    def train_step(self, train_gan = True):
         # TODO: come up with training schedule
         #train_loss_discriminator_true = self.train_step_discriminator(train_mode="true_data")
         #train_loss_discriminator_false = self.train_step_discriminator(train_mode="fake_data")
 
-
         train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
-        for _ in range(3):
-            train_loss_gan = self.train_step_gan()
 
+        if train_gan:
+            for _ in range(3):
+                train_loss_gan = self.train_step_gan()
 
-        return train_loss_gan, train_loss_discriminator_mixed
+            return train_loss_gan, train_loss_discriminator_mixed
+
+        return train_loss_discriminator_mixed
         #return train_loss_gan, train_loss_discriminator_true, train_loss_discriminator_false
