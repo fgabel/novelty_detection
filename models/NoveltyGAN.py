@@ -393,7 +393,8 @@ class NoveltyGAN():
         gan.compile(
             optimizer=adam_optimizer(),
             loss=loss,
-            loss_weights=loss_weights
+            loss_weights=loss_weights,
+            metrics=['accuracy']
         )
 
         self.gan = gan

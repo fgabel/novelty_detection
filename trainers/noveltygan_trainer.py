@@ -76,8 +76,9 @@ def named_logs(model, logs, metrics_dict = None):
     metrics_dict: an optional argument that entails metrics that are to be used optionally
     """
     result = {}
-    result[model.metrics_names[0]] = logs[0]
-    result[model.metrics_names[1]] = logs[1]
+    for i in range(len(model.metrics_names)):
+        result["train" + model.metrics_names[i]] = logs[i]
+        # result[model.metrics_names[1]] = logs[1]
     if metrics_dict:
         result.update(metrics_dict)
     return result
@@ -108,6 +109,8 @@ class NoveltyGANTrainer():
 
         self.tensorboard.set_model(self.gan_model.gan)
         self.modelcheckpoint.set_model(self.gan_model.gan)
+
+        print("DEBUG:", self.gan_model.gan.metrics_names)
 
     def train_epoch(self, id=0):
         logs = []
@@ -157,12 +160,22 @@ class NoveltyGANTrainer():
         def evaluation_loop():
             """This function evaluates both the discriminator and the generator after each epoch"""
             # Discriminator evaluation on fake data
-            print("Fake data: ")
+            # print("Fake data: ")
             dis_fake = self.gan_model.gan.evaluate(img_batch, [label_batch, np.ones(5)])
-            metrics_dict['discriminator_fake_loss'] = dis_fake[0]
-            metrics_dict['discriminator_fake_acc'] = dis_fake[1]
+            """
+            Note: self.gan_model.gan.metrics_names [
+                'loss',
+                'generator_loss',
+                'discriminator_loss',
+                'generator_acc',
+                'discriminator_acc'
+            ]
+            """
+            metrics_dict['discriminator_fake_loss'] = dis_fake[2]
+            metrics_dict['discriminator_fake_acc'] = dis_fake[4]
+
             # Discriminator evaluation on real data
-            print("Real data: ")
+            # print("Real data: ")
             dis_real = self.gan_model.discriminator.evaluate([label_batch, img_batch], np.zeros(5))
             metrics_dict['discriminator_real_loss'] = dis_real
 
@@ -260,9 +273,12 @@ class NoveltyGANTrainer():
         train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
 
         if train_gan:
+            """
             for _ in range(3):
                 train_loss_gan = self.train_step_gan()
             # print("DEBUG:", train_loss_gan)
+            """
+            train_loss_gan = self.train_step_gan()
             return train_loss_gan, train_loss_discriminator_mixed
 
         return train_loss_discriminator_mixed
