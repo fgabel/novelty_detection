@@ -158,7 +158,7 @@ class NoveltyGANTrainer():
             """This function evaluates both the discriminator and the generator after each epoch"""
             # Discriminator evaluation on fake data
             print("Fake data: ")
-            dis_fake = self.gan_model.gan.evaluate(img_batch, np.ones(5))
+            dis_fake = self.gan_model.gan.evaluate(img_batch, [label_batch, np.ones(5)])
             metrics_dict['discriminator_fake_loss'] = dis_fake[0]
             metrics_dict['discriminator_fake_acc'] = dis_fake[1]
             # Discriminator evaluation on real data
@@ -244,11 +244,11 @@ class NoveltyGANTrainer():
 
         # Pick some images from TS
         # Let generator generate fake seg maps (internally) and treat them as true labels
-        img_batch, _ = self.data.next_batch(self.config.batch_size, mode="training")
+        img_batch, lbl_batch = self.data.next_batch(self.config.batch_size, mode="training")
         gan_supervision = np.ones(self.config.batch_size)
 
         # Train the GAN (i.e. the generator) with fixed weights of discriminator
-        loss = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
+        loss = self.gan_model.gan.train_on_batch(img_batch, [lbl_batch, gan_supervision])
 
         return loss
 
@@ -262,7 +262,7 @@ class NoveltyGANTrainer():
         if train_gan:
             for _ in range(3):
                 train_loss_gan = self.train_step_gan()
-
+            # print("DEBUG:", train_loss_gan)
             return train_loss_gan, train_loss_discriminator_mixed
 
         return train_loss_discriminator_mixed

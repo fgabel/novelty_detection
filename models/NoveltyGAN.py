@@ -379,9 +379,23 @@ class NoveltyGAN():
         x = self.generator(img_input)
         # Note: we treat the output of the generator for img_input as input to discriminator
         gan_output = self.discriminator([x, img_input])
-        # gan = Model(inputs=[label_input, img_input], outputs=gan_output)
-        gan = Model(inputs=img_input, outputs=gan_output, name="GAN")
-        gan.compile(loss='binary_crossentropy', optimizer=adam_optimizer(), metrics=['accuracy'])
+        # Two outputs:
+        #   x: generated segmentation map
+        #   gan_output: discriminator output (true/false)
+        gan = Model(inputs=img_input, outputs=[x, gan_output], name="GAN")
+        loss = {}
+        loss_weights = {}
+        loss["generator"] = "categorical_crossentropy"
+        loss_weights["generator"] = 0.3
+        loss["discriminator"] = "binary_crossentropy"
+        loss_weights["discriminator"] = 0.7
+        # gan.compile(loss='binary_crossentropy', optimizer=adam_optimizer(), metrics=['accuracy'])
+        gan.compile(
+            optimizer=adam_optimizer(),
+            loss=loss,
+            loss_weights=loss_weights
+        )
+
         self.gan = gan
 
     def sampler(self, z, y=None):
