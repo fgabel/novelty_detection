@@ -5,10 +5,10 @@ import h5py
 
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
-from tensorflow.keras.initializers import glorot_normal, Zeros, Constant
+from tensorflow.keras.initializers import glorot_normal, Zeros, Constant, RandomNormal
 from tensorflow.keras.layers import Input, add
 from tensorflow.keras.layers import Reshape
-from tensorflow.keras.layers import Conv2D, MaxPooling2D
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, LeakyReLU, BatchNormalization
 from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import Flatten, Dense, Dropout
 from tensorflow.keras.layers import InputSpec, Concatenate
@@ -93,34 +93,33 @@ class NoveltyGAN():
         label_input = Input(shape=(128, 256, self.generator_output_classes))
         img_input = Input(shape=(1024, 2048, 3))
 
-        # Left branch
-        conv_left_1 = Conv2D(64, (5, 5), activation='relu', name='conv_left_1', padding='same')(label_input)
-        # (For non-upsampled label map) (128, 256) -> (128, 256)
+        init = RandomNormal(mean=0.0, stddev=0.02)
 
-        """
-        # Right branch
-        conv_right_1 = Conv2D(16, (5,5), activation='relu', name='conv_right_1', padding='same')(img_input)
-        # (1024, 2048) -> (1024, 2048)
-        pool_right_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_right_1')(conv_right_1)
-        # (1024, 2048) -> (512, 1024)
-        conv_right_2 = Conv2D(64, (5,5), activation='relu', name='conv_right_2', padding='same')(pool_right_1)
-        # (512, 1024) -> (512, 1024)
-        pool_right_2 = MaxPooling2D((2,2), strides=(2,2), name='pool_right_2')(conv_right_2)
-        # (512, 1024) -> (256, 512)
-        # There is some mismatch in dimensions (done)
-        """
+        # Left branch
+        # conv_left_1 = Conv2D(64, (5, 5), activation='relu', name='conv_left_1', padding='same')(label_input)
+        conv_left_1 = Conv2D(64, (5, 5), name='conv_left_1', padding='same', kernel_initializer=init)(label_input)
+        conv_left_1 = BatchNormalization()(conv_left_1)
+        conv_left_1 = LeakyReLU(0.2)(conv_left_1)
+        # (For non-upsampled label map) (128, 256) -> (128, 256)
 
         # Right branch
         # Note: Added one more stack of conv+relu+pool to get dimensions right
-        conv_right_1 = Conv2D(4, (5, 5), activation='relu', name='conv_right_1', padding='same')(img_input)
+        # conv_right_1 = Conv2D(4, (5, 5), activation='relu', name='conv_right_1', padding='same')(img_input)
+        conv_right_1 = Conv2D(4, (5, 5), name='conv_right_1', padding='same', kernel_initializer=init)(img_input)
+        conv_right_1 = BatchNormalization()(conv_right_1)
+        conv_right_1 = LeakyReLU(0.2)(conv_right_1)
         # (1024, 2048) -> (1024, 2048)
         pool_right_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_right_1')(conv_right_1)
         # (1024, 2048) -> (512, 1024)
-        conv_right_2 = Conv2D(16, (5, 5), activation='relu', name='conv_right_2', padding='same')(pool_right_1)
+        conv_right_2 = Conv2D(16, (5, 5), name='conv_right_2', padding='same', kernel_initializer=init)(pool_right_1)
+        conv_right_2 = BatchNormalization()(conv_right_2)
+        conv_right_2 = LeakyReLU(0.2)(conv_right_2)
         # (512, 1024) -> (512, 1024)
         pool_right_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_right_2')(conv_right_2)
         # (512, 1024) -> (256, 512)
-        conv_right_3 = Conv2D(64, (5, 5), activation='relu', name='conv_right_3', padding='same')(pool_right_2)
+        conv_right_3 = Conv2D(64, (5, 5), name='conv_right_3', padding='same', kernel_initializer=init)(pool_right_2)
+        conv_right_3 = BatchNormalization()(conv_right_3)
+        conv_right_3 = LeakyReLU(0.2)(conv_right_3)
         # (256, 512) -> (256, 512)
         pool_right_3 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_right_3')(conv_right_3)
         # (256, 512) -> (128, 256)
@@ -150,13 +149,7 @@ class NoveltyGAN():
         conv_6 = Conv2D(1024, (3, 3), activation='relu', name='conv_6', padding='same')(pool_5)
         pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
         # (4, 8, 512) -> (2, 4, 1024)
-        """
-        conv_7 = Conv2D(1024, (3, 3), activation='relu', name='conv_7', padding='same')(pool_6)
-        pool_7 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_7')(conv_7)
-        # (2, 4, 10124) -> (1, 2, 1024)
-        conv_8 = Conv2D(1, (1, 1), name='conv_8', padding='valid')(pool_7)
-        # (1, 2, 1024) -> (1, 2, 1)
-        """
+
         # Flatten the output of the conv layer to obtain two outputs
         # corresponding to the two classes real/fake
         flattened = Flatten()(pool_6)

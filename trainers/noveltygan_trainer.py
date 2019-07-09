@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras.backend as K
 
-from utils.data_utils import binary_labels_to_image, softmax_output_to_binary_labels
+from utils.data_utils import binary_labels_to_image, softmax_output_to_binary_labels, smooth_labels
 from utils.data_utils import COLOR_PALETTE
 from utils.utils import calculate_confusion_matrix, normalize_confusion_matrix, evaluate_confusion_matrix
 
@@ -114,35 +114,38 @@ class NoveltyGANTrainer():
 
     def train_epoch(self, id=0):
         logs = []
-        #train_loss_dt = []
-        #train_loss_df = []
-        train_loss_mixed = []
+        train_loss_dt = []
+        train_loss_df = []
+        #train_loss_mixed = []
         metrics_dict = dict()
 
         n_per_epoch = self.config.num_iter_per_epoch
-        n_discriminator_only = np.floor(n_per_epoch / 2).astype(int)
+        n_discriminator_only = np.floor(n_per_epoch / 4).astype(int)
         loop1 = tqdm(range(n_discriminator_only))
         loop2 = tqdm(range(n_discriminator_only, n_per_epoch))
 
         for _ in loop2:
-            #log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
-            train_loss_discriminator_mixed = self.train_step(train_gan=False)
-            train_loss_mixed.append(train_loss_discriminator_mixed)
+            # train_loss_discriminator_mixed = self.train_step(train_gan=False)
+            train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step(train_gan=False)
+            # train_loss_mixed.append(train_loss_discriminator_mixed)
+            train_loss_dt.append(train_loss_discriminator_true)
+            train_loss_df.append(train_loss_discriminator_fake)
 
         for _ in loop2:
-            #log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
-            log_gan, train_loss_discriminator_mixed = self.train_step()
+            log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
+            # log_gan, train_loss_discriminator_mixed = self.train_step()
             logs.append(log_gan)
-            #train_loss_dt.append(train_loss_discriminator_true)
-            #train_loss_df.append(train_loss_discriminator_fake)
-            train_loss_mixed.append(train_loss_discriminator_mixed)
+            train_loss_dt.append(train_loss_discriminator_true)
+            train_loss_df.append(train_loss_discriminator_fake)
+            # train_loss_mixed.append(train_loss_discriminator_mixed)
 
         logs_avg = np.mean(logs, axis=0)
-        #metrics_dict['train loss discriminator on true data'] = np.mean(train_loss_dt)
-        #metrics_dict['train loss discriminator on fake data'] = np.mean(train_loss_df)
-        metrics_dict['train loss discriminator on mixed data'] = np.mean(train_loss_mixed)
-        #self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
-        #self.modelcheckpoint.on_epoch_end(id)
+        metrics_dict['train loss discriminator on true data'] = np.mean(train_loss_dt)
+        metrics_dict['train loss discriminator on fake data'] = np.mean(train_loss_df)
+        # metrics_dict['train loss discriminator on mixed data'] = np.mean(train_loss_mixed)
+
+        # self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
+        # self.modelcheckpoint.on_epoch_end(id)
 
         if 0:  # print images
             img_batch, label_batch = self.data.next_batch(batch_size=1, mode="validation")
@@ -225,7 +228,7 @@ class NoveltyGANTrainer():
         if train_mode == "true_data":
             # Pick a pair of images and ground truth labels from data generator
             img_batch, labels_batch = self.data.next_batch(self.config.batch_size, mode="training")
-            discriminator_ground_truth.fill(0.99)
+            discriminator_ground_truth.fill(1.)
         elif train_mode == "fake_data":
             # Let generator generate fake seg maps for another image batch
             img_batch, _ = self.data.next_batch(self.config.batch_size, mode="training")
@@ -240,7 +243,7 @@ class NoveltyGANTrainer():
             labels_batch = np.concatenate((labels_batch_1, labels_batch_2), axis = 0)
             discriminator_ground_truth = np.concatenate((discriminator_ground_truth_1, discriminator_ground_truth_2))
         discriminator_input = [labels_batch, img_batch]
-
+        discriminator_ground_truth = smooth_labels(discriminator_ground_truth)
         loss = self.gan_model.discriminator.train_on_batch(discriminator_input, discriminator_ground_truth)
         return loss
 
@@ -267,10 +270,11 @@ class NoveltyGANTrainer():
 
     def train_step(self, train_gan = True):
         # TODO: come up with training schedule
-        #train_loss_discriminator_true = self.train_step_discriminator(train_mode="true_data")
-        #train_loss_discriminator_false = self.train_step_discriminator(train_mode="fake_data")
 
-        train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
+        train_loss_discriminator_true = self.train_step_discriminator(train_mode="true_data")
+        train_loss_discriminator_false = self.train_step_discriminator(train_mode="fake_data")
+
+        # train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
 
         if train_gan:
             """
@@ -279,7 +283,8 @@ class NoveltyGANTrainer():
             # print("DEBUG:", train_loss_gan)
             """
             train_loss_gan = self.train_step_gan()
-            return train_loss_gan, train_loss_discriminator_mixed
+            return train_loss_gan, train_loss_discriminator_true, train_loss_discriminator_false
+            # return train_loss_gan, train_loss_discriminator_mixed
 
-        return train_loss_discriminator_mixed
-        #return train_loss_gan, train_loss_discriminator_true, train_loss_discriminator_false
+        # return train_loss_discriminator_mixed
+        return train_loss_discriminator_true, train_loss_discriminator_false
