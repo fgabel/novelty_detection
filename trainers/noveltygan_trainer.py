@@ -117,8 +117,7 @@ class NoveltyGANTrainer():
         train_loss_mixed = []
         metrics_dict = dict()
         for _ in loop:
-            print("Train metrics")
-            print(self.train_step())
+
             #log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
             log_gan, train_loss_discriminator_mixed = self.train_step()
             logs.append(log_gan)
@@ -148,15 +147,24 @@ class NoveltyGANTrainer():
         def evaluation_loop():
             """This function evaluates both the discriminator and the generator after each epoch"""
             # Discriminator evaluation on fake data
-            print("Fake data: ")
-            dis_fake = self.gan_model.gan.evaluate(img_batch, np.ones(5))
+            print("Discriminator loss and accuracy on fake data: ")
+            dis_fake = self.gan_model.gan.evaluate(img_batch, np.zeros(5))
             metrics_dict['discriminator_fake_loss'] = dis_fake[0]
             metrics_dict['discriminator_fake_acc'] = dis_fake[1]
+
             # Discriminator evaluation on real data
-            print("Real data: ")
-            dis_real = self.gan_model.discriminator.evaluate([label_batch, img_batch], np.zeros(5))
+            print("Discriminator Loss on real data: ")
+            dis_real = self.gan_model.discriminator.evaluate([label_batch, img_batch], np.ones(5))
             metrics_dict['discriminator_real_loss'] = dis_real
 
+
+            print("___________________")
+            print("Accucary real data: ")
+            print(self.gan_model.discriminator.predict([label_batch, img_batch]))
+            print("Accucary fake data: ")
+            generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
+            print(self.gan_model.discriminator.predict([generated_segmaps, img_batch]))
+            print("___________________")
             if 1:
                 fcn_iou_function = K.function([self.gan_model.generator.get_layer("rgb_input").input, K.learning_phase()],
                     [self.gan_model.generator.get_layer("softmax_output").output])
@@ -175,7 +183,7 @@ class NoveltyGANTrainer():
                 [pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
                  class_TNR] = evaluate_confusion_matrix(confusion_matrix)
                 metrics_dict['validation IoU'] = np.mean(class_IoU)
-
+                print("IoU:", np.mean(class_IoU))
         evaluation_loop()
 
         self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg, metrics_dict))
@@ -228,19 +236,13 @@ class NoveltyGANTrainer():
         :return: The loss for this training step of the GAN
         """
 
-        # During the training of gan,
-        # the weights of discriminator should be fixed.
-        # We can enforce that by setting the trainable flag
-        self.gan_model.discriminator.trainable = False
-
         # Pick some images from TS
         # Let generator generate fake seg maps (internally) and treat them as true labels
-        img_batch, _ = self.data.next_batch(self.config.batch_size, mode="training")
+        img_batch, label_batch = self.data.next_batch(self.config.batch_size, mode="training")
         gan_supervision = np.ones(self.config.batch_size)
 
         # Train the GAN (i.e. the generator) with fixed weights of discriminator
-        loss = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
-
+        loss = self.gan_model.gan.train_on_batch(img_batch, gan_supervision) + 0.3 * self.gan_model.generator.train_on_batch(img_batch, label_batch)
         return loss
 
     def train_step(self):
@@ -250,7 +252,7 @@ class NoveltyGANTrainer():
 
 
         train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
-        for _ in range(3):
+        for _ in range(5):
             train_loss_gan = self.train_step_gan()
 
 
