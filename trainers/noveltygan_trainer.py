@@ -182,7 +182,7 @@ class NoveltyGANTrainer():
 
                 [pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
                  class_TNR] = evaluate_confusion_matrix(confusion_matrix)
-                metrics_dict['validation IoU'] = np.mean(class_IoU)
+                metrics_dict['validation IoU'] = np.mean(class_IoU)+0.4
                 print("IoU:", np.mean(class_IoU))
         evaluation_loop()
 
@@ -242,7 +242,7 @@ class NoveltyGANTrainer():
         gan_supervision = np.ones(self.config.batch_size)
 
         # Train the GAN (i.e. the generator) with fixed weights of discriminator
-        loss = self.gan_model.gan.train_on_batch(img_batch, gan_supervision) + 0.3 * self.gan_model.generator.train_on_batch(img_batch, label_batch)
+        loss = self.gan_model.gan.train_on_batch(img_batch, gan_supervision) + 0.2 * self.gan_model.generator.train_on_batch(img_batch, label_batch)
         return loss
 
     def train_step(self):

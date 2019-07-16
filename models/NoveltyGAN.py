@@ -348,7 +348,7 @@ class NoveltyGAN():
 
             loss["softmax_output"] = "categorical_crossentropy"
             loss_weights["softmax_output"] = 1.
-            generator.trainable = False
+            generator.trainable = True
             generator.compile(
                 optimizer=adam_optimizer(),
                 loss=loss,
@@ -368,8 +368,7 @@ class NoveltyGAN():
                         kernel_initializer=xavier_weight_filler)(fc6)
             fc7 = Dropout(0.5)(fc7)
             output = Dense(self.generator_output_classes, activation='softmax_output', name="scoring",
-                           bias_initializer=fc_bias_weight_filler, kernel_initializer=xavier_weight_filler)(fc7)
-
+    bias_initializer = fc_bias_weight_filler, kernel_initializer = xavier_weight_filler)(fc7)
 
     def build_gan(self):
         """Method to combine discriminator and generator into a GAN"""

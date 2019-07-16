@@ -62,6 +62,7 @@ def binarize_labels(labels, output_classes = 1000):
 
 def get_binary_label_data(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix, output_classes):
     # dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix
+
     return binarize_labels(get_label_data(
         dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix
     ), output_classes=output_classes)
