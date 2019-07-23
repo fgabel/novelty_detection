@@ -14,7 +14,7 @@ def load_image(dataset_type, data_name, dataset_folders, images_directory_name, 
     folder_images_path = dataset_folders[dataset_type] + "/" + images_directory_name
     image_filename = folder_images_path + "/" + data_name + images_suffix
     image = skimage.io.imread(image_filename).astype(np.float32)
-
+    #print(image_filename)   
     return image
 
 def load_labels(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix):

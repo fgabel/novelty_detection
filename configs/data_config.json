@@ -8,10 +8,10 @@
   "images_suffix": "_leftImg8bit.png",
   "classes_suffix": "_gtFine_color.png",
   "dataset_folders": {
-    "training": "C:/Users/Frank/Desktop/students/students/data/cityscapes/train",
-    "validation": "C:/Users/Frank/Desktop/students/students/data/cityscapes/val"
+    "training": "../../data/leftImg8bit/train",
+    "validation": "../../data/leftImg8bit/val"
   },
-  "BASE_PATH": "C:/Users/Frank/Desktop/students",
-  "MODEL_FILEPATH": "C:/Users/Frank/Desktop/students/students/ganovelty/models/semseg_model.h5",
-  "IMAGENET_FILEPATH": "C:/Users/Frank/Desktop/students/students/ganovelty/models/imagenet_weights_0_25.h5"
+  "BASE_PATH": "",
+  "MODEL_FILEPATH": "../models/semseg_model.h5",
+  "IMAGENET_FILEPATH": "../models/imagenet_weights_0_25.h5"
 }

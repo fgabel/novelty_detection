@@ -3,12 +3,19 @@
   <component name="ChangeListManager">
     <list default="true" id="42287bae-aea4-4734-8bac-001209018911" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GANOVELTY.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/GANOVELTY.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/configs/data_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/configs/data_config.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/configs/my_data_config.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/configs/train_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/configs/train_config.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/NoveltyGAN.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/NoveltyGAN.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/noveltygan_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/noveltygan_trainer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/logs/events.out.tfevents.1562771602.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/logs/events.out.tfevents.1562774724.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/logs/events.out.tfevents.1562776647.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/logs/events.out.tfevents.1562776883.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/logs/events.out.tfevents.1562777556.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/logs/events.out.tfevents.1562778969.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/summary/events.out.tfevents.1562771697.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/summary/events.out.tfevents.1562774818.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/summary/events.out.tfevents.1562776755.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/summary/events.out.tfevents.1562776985.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/summary/events.out.tfevents.1562777662.FRANK-PC" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/example/summary/events.out.tfevents.1562779060.FRANK-PC" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -20,15 +27,15 @@
     <SUITE FILE_PATH="coverage/Project$Discriminator.coverage" NAME="Discriminator Coverage Results" MODIFIED="1559990074160" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />
     <SUITE FILE_PATH="coverage/novelty_detection$data_generator.coverage" NAME="data_generator Coverage Results" MODIFIED="1560330995315" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data_loader" />
     <SUITE FILE_PATH="coverage/novelty_detection$Discriminator.coverage" NAME="Discriminator Coverage Results" MODIFIED="1560324342692" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />
-    <SUITE FILE_PATH="coverage/novelty_detection$main.coverage" NAME="main Coverage Results" MODIFIED="1562778957979" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mains" />
+    <SUITE FILE_PATH="coverage/novelty_detection$main.coverage" NAME="main Coverage Results" MODIFIED="1563209623881" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mains" />
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/data_loader/data_generator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1260">
-              <caret line="67" column="11" selection-start-line="67" selection-start-column="11" selection-end-line="67" selection-end-column="11" />
+            <state relative-caret-position="237">
+              <caret line="41" column="100" selection-start-line="41" selection-start-column="85" selection-end-line="41" selection-end-column="100" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -48,20 +55,44 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/models/NoveltyGAN.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="6909">
-              <caret line="355" column="13" selection-start-line="355" selection-start-column="13" selection-end-line="355" selection-end-column="13" />
+            <state relative-caret-position="-469">
+              <caret line="95" column="21" lean-forward="true" selection-start-line="95" selection-start-column="21" selection-end-line="95" selection-end-column="21" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/utils/data_utils.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1197">
+              <caret line="62" column="66" selection-start-line="62" selection-start-column="51" selection-end-line="62" selection-end-column="66" />
+              <folding>
+                <element signature="e#0#15#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/utils/utils.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="924">
+              <caret line="49" column="29" selection-start-line="49" selection-start-column="29" selection-end-line="49" selection-end-column="29" />
+              <folding>
+                <element signature="e#0#15#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/trainers/noveltygan_trainer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="361">
-              <caret line="156" column="98" selection-start-line="156" selection-start-column="23" selection-end-line="156" selection-end-column="98" />
+            <state relative-caret-position="4830">
+              <caret line="244" column="45" selection-start-line="244" selection-start-column="45" selection-end-line="244" selection-end-column="45" />
               <folding>
                 <element signature="e#0#21#0" expanded="true" />
               </folding>
@@ -102,11 +133,11 @@
         <option value="$PROJECT_DIR$/base/base_model.py" />
         <option value="$USER_HOME$/Anaconda3/Lib/site-packages/bunch/__init__.py" />
         <option value="$PROJECT_DIR$/utils/utils.py" />
-        <option value="$PROJECT_DIR$/utils/data_utils.py" />
         <option value="$PROJECT_DIR$/data_loader/data_generator.py" />
-        <option value="$PROJECT_DIR$/models/NoveltyGAN.py" />
         <option value="$PROJECT_DIR$/mains/main.py" />
         <option value="$PROJECT_DIR$/trainers/noveltygan_trainer.py" />
+        <option value="$PROJECT_DIR$/utils/data_utils.py" />
+        <option value="$PROJECT_DIR$/models/NoveltyGAN.py" />
       </list>
     </option>
   </component>
@@ -283,17 +314,27 @@
       <workItem from="1562582926905" duration="1423000" />
       <workItem from="1562587642143" duration="1432000" />
       <workItem from="1562768398913" duration="5245000" />
-      <workItem from="1562776315052" duration="3322000" />
+      <workItem from="1562776315052" duration="4857000" />
+      <workItem from="1562831576129" duration="4745000" />
+      <workItem from="1562838727801" duration="1208000" />
+      <workItem from="1562840979081" duration="2555000" />
+      <workItem from="1562879571289" duration="180000" />
+      <workItem from="1562881009080" duration="254000" />
+      <workItem from="1563051637179" duration="417000" />
+      <workItem from="1563052599679" duration="26000" />
+      <workItem from="1563208206247" duration="1571000" />
+      <workItem from="1563262745551" duration="1795000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="32078000" />
+    <option name="totallyTimeSpent" value="46364000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-9" y="-9" width="1938" height="1000" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2932331" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.33458647" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -400,23 +441,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/utils/data_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="462">
-          <caret line="27" selection-start-line="27" selection-end-line="27" />
-          <folding>
-            <element signature="e#0#15#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="84">
-          <caret line="4" selection-start-line="4" selection-end-line="4" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/utils/config.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="42">
@@ -449,8 +473,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/data_loader/data_generator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1260">
-          <caret line="67" column="11" selection-start-line="67" selection-start-column="11" selection-end-line="67" selection-end-column="11" />
+        <state relative-caret-position="237">
+          <caret line="41" column="100" selection-start-line="41" selection-start-column="85" selection-end-line="41" selection-end-column="100" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
@@ -467,20 +491,40 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/models/NoveltyGAN.py">
+    <entry file="file://$PROJECT_DIR$/utils/data_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6909">
-          <caret line="355" column="13" selection-start-line="355" selection-start-column="13" selection-end-line="355" selection-end-column="13" />
+        <state relative-caret-position="1197">
+          <caret line="62" column="66" selection-start-line="62" selection-start-column="51" selection-end-line="62" selection-end-column="66" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="924">
+          <caret line="49" column="29" selection-start-line="49" selection-start-column="29" selection-end-line="49" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/trainers/noveltygan_trainer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="361">
-          <caret line="156" column="98" selection-start-line="156" selection-start-column="23" selection-end-line="156" selection-end-column="98" />
+        <state relative-caret-position="4830">
+          <caret line="244" column="45" selection-start-line="244" selection-start-column="45" selection-end-line="244" selection-end-column="45" />
           <folding>
             <element signature="e#0#21#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/NoveltyGAN.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-469">
+          <caret line="95" column="21" lean-forward="true" selection-start-line="95" selection-start-column="21" selection-end-line="95" selection-end-column="21" />
         </state>
       </provider>
     </entry>

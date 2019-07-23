@@ -13,7 +13,7 @@ from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import Flatten, Dense, Dropout
 from tensorflow.keras.layers import InputSpec, Concatenate
 from tensorflow.keras.optimizers import Adam
-
+K.set_image_data_format('channels_last')
 import os
 import time
 import math
@@ -131,24 +131,24 @@ class NoveltyGAN():
         # i.e. (128, 256, 128)
 
         conv_1 = Conv2D(128, (3, 3), activation='relu', name='conv_1', padding='same')(concat)
-        pool_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
-        # (128, 256, 128) -> (64, 128, 128)
-        conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='same')(pool_1)
-        pool_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
-        # (64, 128, 128) -> (32, 64, 256)
-        conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(pool_2)
-        pool_3 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_3')(conv_3)
-        # (32, 64, 256) -> (16, 32, 256)
-        conv_4 = Conv2D(512, (3, 3), activation='relu', name='conv_4', padding='same')(pool_3)
-        pool_4 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_4')(conv_4)
-        # (16, 32, 256) -> (8, 16, 512)
+        #pool_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
+        # (128, 256, 128)
+        conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='same')(conv_1)
+        #pool_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
+        # (128, 256, 256)
+        conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(conv_2)
+        #pool_3 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_3')(conv_3)
+        # (128, 256, 256) -> (128, 256, 256)
+        conv_4 = Conv2D(1, (3, 3), activation='sigmoid', name='conv_4', padding='same')(conv_3)
+        #pool_4 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_4')(conv_4)
+        # (128, 256, 256) -> (128, 256, 1)
 
         # Augment the original architecture since our images are of larger dimensions (?)
-        conv_5 = Conv2D(512, (3, 3), activation='relu', name='conv_5', padding='same')(pool_4)
-        pool_5 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_5')(conv_5)
+        #conv_5 = Conv2D(512, (3, 3), activation='relu', name='conv_5', padding='same')(conv_4)
+        #pool_5 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_5')(conv_5)
         # (8, 16, 512) -> (4, 8, 512)
-        conv_6 = Conv2D(1024, (3, 3), activation='relu', name='conv_6', padding='same')(pool_5)
-        pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
+        #conv_6 = Conv2D(1024, (3, 3), activation='relu', name='conv_6', padding='same')(pool_5)
+        #pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
         # (4, 8, 512) -> (2, 4, 1024)
         """
         conv_7 = Conv2D(1024, (3, 3), activation='relu', name='conv_7', padding='same')(pool_6)
@@ -159,13 +159,13 @@ class NoveltyGAN():
         """
         # Flatten the output of the conv layer to obtain two outputs
         # corresponding to the two classes real/fake
-        flattened = Flatten()(pool_6)
+        #flattened = Flatten()(conv_4)
 
         # FC + Sigmoid to obtain single output (= probability that input is sampled from real distribution)
-        out = Dense(units=1, activation='sigmoid')(flattened)
+        #out = Dense(units=1, activation='sigmoid')(flattened)
 
-        discriminator = Model(inputs=[label_input, img_input], outputs=out, name="discriminator")
-        discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
+        discriminator = Model(inputs=[label_input, img_input], outputs=conv_4[:, :, :, 0], name="discriminator")
+        discriminator.compile(loss=tf.keras.losses.BinaryCrossentropy(), optimizer=adam_optimizer())
 
         self.discriminator = discriminator
 
@@ -230,7 +230,7 @@ class NoveltyGAN():
             weightFC1W = weightFC1W.reshape((1, 1, int(4096 * self.alpha), int(4096 * self.alpha)))
 
             weight_value_tuples[14] = [weightFC1W, weightFC1b]
-
+        
         rgb_input = Input(shape=(None, None, 3), name="rgb_input")
         # input_shape = (1024,2048)
 
@@ -380,7 +380,7 @@ class NoveltyGAN():
         gan_output = self.discriminator([x, img_input])
         # gan = Model(inputs=[label_input, img_input], outputs=gan_output)
         gan = Model(inputs=img_input, outputs=gan_output, name="GAN")
-        gan.compile(loss='binary_crossentropy', optimizer=adam_optimizer(), metrics=['accuracy'])
+        gan.compile(loss=tf.keras.losses.BinaryCrossentropy(), optimizer=adam_optimizer(), metrics=['accuracy'])
         self.gan = gan
 
     def sampler(self, z, y=None):

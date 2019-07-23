@@ -76,8 +76,8 @@ def named_logs(model, logs, metrics_dict = None):
     metrics_dict: an optional argument that entails metrics that are to be used optionally
     """
     result = {}
-    result[model.metrics_names[0]] = logs[0]
-    result[model.metrics_names[1]] = logs[1]
+    result[model.metrics_names[0]] = logs
+    #result[model.metrics_names[1]] = logs[1]
     if metrics_dict:
         result.update(metrics_dict)
     return result
@@ -115,19 +115,23 @@ class NoveltyGANTrainer():
         #train_loss_dt = []
         #train_loss_df = []
         train_loss_mixed = []
+        train_loss_gan_from_dis = []
+        train_loss_gan_from_gen = []
         metrics_dict = dict()
         for _ in loop:
 
             #log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
-            log_gan, train_loss_discriminator_mixed = self.train_step()
+            log_gan, train_loss_discriminator_mixed, train_loss_gan_from_dis_, train_loss_gan_from_gen_ = self.train_step()
             logs.append(log_gan)
-            #train_loss_dt.append(train_loss_discriminator_true)
-            #train_loss_df.append(train_loss_discriminator_fake)
+            train_loss_gan_from_dis.append(train_loss_gan_from_dis_)
+            train_loss_gan_from_gen.append(train_loss_gan_from_gen_)
             train_loss_mixed.append(train_loss_discriminator_mixed)
         logs_avg = np.mean(logs, axis=0)
         #metrics_dict['train loss discriminator on true data'] = np.mean(train_loss_dt)
         #metrics_dict['train loss discriminator on fake data'] = np.mean(train_loss_df)
-        metrics_dict['train loss discriminator on mixed data'] = np.mean(train_loss_mixed)
+        metrics_dict["TRAIN: D_mixed_loss"] = np.mean(train_loss_mixed)
+        metrics_dict["TRAIN: GAN from D"] = np.mean(train_loss_gan_from_dis)
+        metrics_dict["TRAIN: GAN from G"] = np.mean(train_loss_gan_from_gen)
         #self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
         #self.modelcheckpoint.on_epoch_end(id)
 
@@ -141,27 +145,26 @@ class NoveltyGANTrainer():
                 'corresponding_image': img_batch
             })
 
-        img_batch, label_batch = self.data.next_batch(batch_size=5,
+        img_batch, label_batch = self.data.next_batch(batch_size=10,
                                                       mode="validation")
 
         def evaluation_loop():
             """This function evaluates both the discriminator and the generator after each epoch"""
             # Discriminator evaluation on fake data
-            print("Discriminator loss and accuracy on fake data: ")
-            dis_fake = self.gan_model.gan.evaluate(img_batch, np.zeros(5))
-            metrics_dict['discriminator_fake_loss'] = dis_fake[0]
-            metrics_dict['discriminator_fake_acc'] = dis_fake[1]
+            print("[VALIDATION] D loss and accuracy on fake data: ")
+            dis_fake = self.gan_model.gan.evaluate(img_batch, np.zeros((10, 128, 256)))
+            metrics_dict["VALIDATION: D_fake_loss"] = dis_fake[0]
+            metrics_dict["VALIDATION: D_fake_acc"] = dis_fake[1]
 
             # Discriminator evaluation on real data
-            print("Discriminator Loss on real data: ")
-            dis_real = self.gan_model.discriminator.evaluate([label_batch, img_batch], np.ones(5))
-            metrics_dict['discriminator_real_loss'] = dis_real
-
+            print("[VALIDATION] D Loss on real data: ")
+            dis_real = self.gan_model.discriminator.evaluate([label_batch, img_batch], np.ones((10, 128, 256)))
+            metrics_dict["VALIDATION: D_real_loss"] = dis_real 
 
             print("___________________")
-            print("Accucary real data: ")
+            print("[VALIDATION] Accucary real data: ")
             print(self.gan_model.discriminator.predict([label_batch, img_batch]))
-            print("Accucary fake data: ")
+            print("[VALIDATION] Predictionsfake data: ")
             generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
             print(self.gan_model.discriminator.predict([generated_segmaps, img_batch]))
             print("___________________")
@@ -174,16 +177,16 @@ class NoveltyGANTrainer():
                 #pred_batch = self.gan_model.generator(img_batch)  # (5, 128, 256, 19)
 
 
-                confusion_matrix = calculate_confusion_matrix(pred_batch, label_batch)
-                eval_out ={}
-                eval_out['confMatrix'] = confusion_matrix
+                confusion_matrix, IoU = calculate_confusion_matrix(pred_batch, label_batch)
+                #eval_out ={}
+                #eval_out['confMatrix'] = confusion_matrix
 
-                eval_out['norm_confMatrix'] = normalize_confusion_matrix(confusion_matrix)
+                #eval_out['norm_confMatrix'] = normalize_confusion_matrix(confusion_matrix)
 
-                [pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
-                 class_TNR] = evaluate_confusion_matrix(confusion_matrix)
-                metrics_dict['validation IoU'] = np.mean(class_IoU)+0.4
-                print("IoU:", np.mean(class_IoU))
+                #[pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
+                # class_TNR] = evaluate_confusion_matrix(confusion_matrix)
+                metrics_dict["validation IoU"] = IoU
+                print("IoU:", IoU)
         evaluation_loop()
 
         self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg, metrics_dict))
@@ -203,7 +206,7 @@ class NoveltyGANTrainer():
         # TODO: Add additional control parameter for ratio of fake/real data to train on.
 
         # We need to set the discriminator trainable first
-        self.gan_model.discriminator.trainable = True
+        #self.gan_model.discriminator.trainable = True
 
         img_batch, labels_batch = None, None
         discriminator_ground_truth = np.zeros(self.config.batch_size)
@@ -212,16 +215,17 @@ class NoveltyGANTrainer():
             # Pick a pair of images and ground truth labels from data generator
             img_batch, labels_batch = self.data.next_batch(self.config.batch_size, mode="training")
             discriminator_ground_truth.fill(0.99)
-        elif train_mode == "fake_data":
+        if train_mode == "fake_data":
             # Let generator generate fake seg maps for another image batch
             img_batch, _ = self.data.next_batch(self.config.batch_size, mode="training")
             labels_batch = self.gan_model.generator.predict(img_batch)
-        elif train_mode == "mixed":
+        if train_mode == "mixed":
+            
             img_batch_1, labels_batch_1 = self.data.next_batch(self.config.batch_size, mode="training")
-            discriminator_ground_truth_1 = np.ones(self.config.batch_size)
+            discriminator_ground_truth_1 = np.ones((self.config.batch_size, 128, 256))
             img_batch_2, _ = self.data.next_batch(self.config.batch_size, mode="training")
             labels_batch_2 = self.gan_model.generator.predict(img_batch_2)
-            discriminator_ground_truth_2 = np.zeros(self.config.batch_size)
+            discriminator_ground_truth_2 = np.zeros((self.config.batch_size, 128, 256))
             img_batch = np.concatenate((img_batch_1, img_batch_2), axis = 0)
             labels_batch = np.concatenate((labels_batch_1, labels_batch_2), axis = 0)
             discriminator_ground_truth = np.concatenate((discriminator_ground_truth_1, discriminator_ground_truth_2))
@@ -239,11 +243,13 @@ class NoveltyGANTrainer():
         # Pick some images from TS
         # Let generator generate fake seg maps (internally) and treat them as true labels
         img_batch, label_batch = self.data.next_batch(self.config.batch_size, mode="training")
-        gan_supervision = np.ones(self.config.batch_size)
-
+        gan_supervision = np.ones((self.config.batch_size, 128, 256))
+        loss_gan_from_dis = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
+        loss_gan_from_gen = self.gan_model.generator.train_on_batch(img_batch, label_batch)
         # Train the GAN (i.e. the generator) with fixed weights of discriminator
-        loss = self.gan_model.gan.train_on_batch(img_batch, gan_supervision) + 0.2 * self.gan_model.generator.train_on_batch(img_batch, label_batch)
-        return loss
+        
+        loss = 0.8 * loss_gan_from_dis[0] + 0.2 * loss_gan_from_gen
+        return loss, loss_gan_from_dis, loss_gan_from_gen
 
     def train_step(self):
         # TODO: come up with training schedule
@@ -252,9 +258,9 @@ class NoveltyGANTrainer():
 
 
         train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
-        for _ in range(5):
-            train_loss_gan = self.train_step_gan()
+        for _ in range(8):
+            train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
 
 
-        return train_loss_gan, train_loss_discriminator_mixed
+        return train_loss_gan, train_loss_discriminator_mixed, train_loss_gan_from_dis, train_loss_gan_from_gen
         #return train_loss_gan, train_loss_discriminator_true, train_loss_discriminator_false

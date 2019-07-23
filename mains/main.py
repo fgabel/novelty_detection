@@ -1,3 +1,6 @@
+import sys
+sys.path.append("/export/home/ffeldman/FRANKTHETANK/novelty_detection_pixelwise")
+
 import tensorflow as tf
 import argparse
 from data_loader.data_generator import DataGenerator

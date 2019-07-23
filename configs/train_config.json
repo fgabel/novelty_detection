@@ -1,8 +1,8 @@
 {
-  "exp_name": "example",
-  "num_epochs": 100,
-  "num_iter_per_epoch": 5,
-  "learning_rate": 0.05,
-  "batch_size": 4,
+  "exp_name": "pixelwise_lr_0.0015_22_07_0832",
+  "num_epochs": 150,
+  "num_iter_per_epoch": 10,
+  "learning_rate": 0.0015,
+  "batch_size": 12,
   "max_to_keep":5
 }
