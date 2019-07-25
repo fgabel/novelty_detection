@@ -29,8 +29,8 @@ from utils.layer_utils import Softmax4D
 # Note: this method is just placeholder by now
 # TODO: add an additional moduke for handling optimizers
 
-def adam_optimizer():
-    return Adam(lr=0.0001, beta_1=0.99, beta_2=0.999, epsilon=1e-6)
+def adam_optimizer(learning_rate = 0.0001):
+    return Adam(lr=learning_rate, beta_1=0.99, beta_2=0.999, epsilon=1e-6)
 
 def conv_out_size_same(size, stride):
     return int(math.ceil(float(size) / float(stride)))
@@ -55,7 +55,7 @@ class NoveltyGAN():
         num_filters: Network hyperparameter in the fcn head
     """
     def __init__(self, generator_output_classes=1000, fcn=False, upsampling=False, alpha=1, imagenet_filepath=None,
-                 model_filepath=None):
+                 model_filepath=None, learning_rates = {}):
         super().__init__()
 
         self.name = "NoveltyGAN"
@@ -68,6 +68,10 @@ class NoveltyGAN():
         # TODO: set self.num_filters accordingly (see down below); dummy initialization by now
         self.num_filters = 32
         # Setup generator and discriminator
+
+        self.lr_discriminator = learning_rates.get('discriminator', 0.0001)
+        self.lr_generator = learning_rates.get('generator', 0.0001)
+        self.lr_gan = learning_rates.get('gan', 0.0001)
 
         self.generator = None
         self.discriminator = None
@@ -169,7 +173,8 @@ class NoveltyGAN():
         conv_4 = tf.keras.layers.Lambda(lambda x: tf.keras.backend.squeeze(x, -1))(conv_4)
 
         discriminator = Model(inputs=[label_input, img_input], outputs=conv_4, name="discriminator")
-        discriminator.compile(loss=tf.keras.losses.BinaryCrossentropy(), optimizer=adam_optimizer())
+        discriminator.compile(loss=tf.keras.losses.BinaryCrossentropy(),
+                              optimizer=adam_optimizer(self.lr_discriminator))
 
         self.discriminator = discriminator
 
@@ -354,7 +359,7 @@ class NoveltyGAN():
             loss_weights["softmax_output"] = 1.
             generator.trainable = True
             generator.compile(
-                optimizer=adam_optimizer(),
+                optimizer=adam_optimizer(self.lr_generator),
                 loss=loss,
                 loss_weights=loss_weights
             )
@@ -384,7 +389,9 @@ class NoveltyGAN():
         gan_output = self.discriminator([x, img_input])
         # gan = Model(inputs=[label_input, img_input], outputs=gan_output)
         gan = Model(inputs=img_input, outputs=gan_output, name="GAN")
-        gan.compile(loss=tf.keras.losses.BinaryCrossentropy(), optimizer=adam_optimizer(), metrics=['accuracy'])
+        gan.compile(loss=tf.keras.losses.BinaryCrossentropy(),
+                    optimizer=adam_optimizer(self.lr_gan),
+                    metrics=['accuracy'])
         self.gan = gan
 
     def sampler(self, z, y=None):

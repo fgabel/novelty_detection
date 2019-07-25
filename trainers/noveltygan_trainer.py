@@ -109,7 +109,7 @@ class NoveltyGANTrainer():
         self.tensorboard.set_model(self.gan_model.gan)
         self.modelcheckpoint.set_model(self.gan_model.gan)
 
-    def train_epoch(self, id=0):
+    def train_epoch(self, id=0, print_images=True):
         loop = tqdm(range(self.config.num_iter_per_epoch))
         logs = []
         #train_loss_dt = []
@@ -119,7 +119,6 @@ class NoveltyGANTrainer():
         train_loss_gan_from_gen = []
         metrics_dict = dict()
         for _ in loop:
-
             #log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
             log_gan, train_loss_discriminator_mixed, train_loss_gan_from_dis_, train_loss_gan_from_gen_ = self.train_step()
             logs.append(log_gan)
@@ -135,7 +134,7 @@ class NoveltyGANTrainer():
         #self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
         #self.modelcheckpoint.on_epoch_end(id)
 
-        if 1:  # print images
+        if print_images:  # print images
             img_batch, label_batch = self.data.next_batch(batch_size=1, mode="validation")
 
             generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
@@ -203,24 +202,19 @@ class NoveltyGANTrainer():
         :return: The loss for this training step of the discriminator
         """
 
-        # TODO: Add additional control parameter for ratio of fake/real data to train on.
-
-        # We need to set the discriminator trainable first
-        #self.gan_model.discriminator.trainable = True
-
         img_batch, labels_batch = None, None
-        discriminator_ground_truth = np.zeros(self.config.batch_size)
+        discriminator_ground_truth = None
 
         if train_mode == "true_data":
             # Pick a pair of images and ground truth labels from data generator
             img_batch, labels_batch = self.data.next_batch(self.config.batch_size, mode="training")
-            discriminator_ground_truth.fill(0.99)
+            discriminator_ground_truth = np.ones((self.config.batch_size, 128, 256))
         if train_mode == "fake_data":
             # Let generator generate fake seg maps for another image batch
             img_batch, _ = self.data.next_batch(self.config.batch_size, mode="training")
             labels_batch = self.gan_model.generator.predict(img_batch)
+            discriminator_ground_truth = np.zeros((self.config.batch_size, 128, 256))
         if train_mode == "mixed":
-            
             img_batch_1, labels_batch_1 = self.data.next_batch(self.config.batch_size, mode="training")
             discriminator_ground_truth_1 = np.ones((self.config.batch_size, 128, 256))
             img_batch_2, _ = self.data.next_batch(self.config.batch_size, mode="training")

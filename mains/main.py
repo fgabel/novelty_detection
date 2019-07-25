@@ -42,8 +42,13 @@ def main():
     MODEL_FILEPATH = os.path.join(cfg.BASE_PATH, cfg.MODEL_FILEPATH)
 
     # create novelty GAN
+    lr = {
+        'discriminator': config.learning_rate,
+        'generator': config.learning_rate,
+        'gan': config.learning_rate
+    }
     novelty_gan = NoveltyGAN(generator_output_classes=cfg.OUTPUT_CLASSES, fcn=True, upsampling=False, alpha=0.25,
-                             imagenet_filepath=IMAGENET_FILEPATH, model_filepath=MODEL_FILEPATH)
+                             imagenet_filepath=IMAGENET_FILEPATH, model_filepath=MODEL_FILEPATH, learning_rates=lr)
 
     # create the trainer object
     trainer = NoveltyGANTrainer(novelty_gan, data, config)
