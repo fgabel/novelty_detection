@@ -164,7 +164,11 @@ class NoveltyGAN():
         # FC + Sigmoid to obtain single output (= probability that input is sampled from real distribution)
         #out = Dense(units=1, activation='sigmoid')(flattened)
 
-        discriminator = Model(inputs=[label_input, img_input], outputs=conv_4[:, :, :, 0], name="discriminator")
+        # discriminator = Model(inputs=[label_input, img_input], outputs=conv_4[:, :, :, 0], name="discriminator")
+
+        conv_4 = tf.keras.layers.Lambda(lambda x: tf.keras.backend.squeeze(x, -1))(conv_4)
+
+        discriminator = Model(inputs=[label_input, img_input], outputs=conv_4, name="discriminator")
         discriminator.compile(loss=tf.keras.losses.BinaryCrossentropy(), optimizer=adam_optimizer())
 
         self.discriminator = discriminator
