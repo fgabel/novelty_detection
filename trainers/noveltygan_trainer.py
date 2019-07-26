@@ -153,10 +153,13 @@ class NoveltyGANTrainer():
             print("[VALIDATION] D loss and accuracy on fake data: ")
             dis_fake = self.gan_model.gan.evaluate(
                 img_batch,
-                np.zeros((10, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
+                [label_batch, np.zeros((10, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))]
             )
-            metrics_dict["VALIDATION: D_fake_loss"] = dis_fake[0]
-            metrics_dict["VALIDATION: D_fake_acc"] = dis_fake[1]
+            """
+                See comment on self.gan_model.gan.metrics_names in train_step_gan down below
+            """
+            metrics_dict["VALIDATION: D_fake_loss"] = dis_fake[2]
+            metrics_dict["VALIDATION: D_fake_acc"] = dis_fake[4]
 
             # Discriminator evaluation on real data
             print("[VALIDATION] D Loss on real data: ")
@@ -252,12 +255,27 @@ class NoveltyGANTrainer():
         # Let generator generate fake seg maps (internally) and treat them as true labels
         img_batch, label_batch = self.data.next_batch(self.config.batch_size, mode="training")
         gan_supervision = np.ones((self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
-        loss_gan_from_dis = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
-        loss_gan_from_gen = self.gan_model.generator.train_on_batch(img_batch, label_batch)
+
+        logs = self.gan_model.gan.train_on_batch(img_batch, [label_batch, gan_supervision])
+
+        """
+            Note: self.gan_model.gan.metrics_names [
+                'loss',
+                'generator_loss',
+                'discriminator_loss',
+                'generator_acc',
+                'discriminator_acc'
+            ]
+        """
+
+        # loss_gan_from_dis = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
+        # loss_gan_from_gen = self.gan_model.generator.train_on_batch(img_batch, label_batch)
         # Train the GAN (i.e. the generator) with fixed weights of discriminator
         
-        loss = 0.8 * loss_gan_from_dis[0] + 0.2 * loss_gan_from_gen
-        return loss, loss_gan_from_dis, loss_gan_from_gen
+        # loss = 0.8 * loss_gan_from_dis[0] + 0.2 * loss_gan_from_gen
+        # return loss, loss_gan_from_dis, loss_gan_from_gen
+
+        return logs[0], logs[2], logs[1]
 
     def train_step(self):
         # TODO: come up with training schedule
