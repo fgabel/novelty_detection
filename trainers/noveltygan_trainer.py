@@ -151,13 +151,19 @@ class NoveltyGANTrainer():
             """This function evaluates both the discriminator and the generator after each epoch"""
             # Discriminator evaluation on fake data
             print("[VALIDATION] D loss and accuracy on fake data: ")
-            dis_fake = self.gan_model.gan.evaluate(img_batch, np.zeros((10, 128, 256)))
+            dis_fake = self.gan_model.gan.evaluate(
+                img_batch,
+                np.zeros((10, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
+            )
             metrics_dict["VALIDATION: D_fake_loss"] = dis_fake[0]
             metrics_dict["VALIDATION: D_fake_acc"] = dis_fake[1]
 
             # Discriminator evaluation on real data
             print("[VALIDATION] D Loss on real data: ")
-            dis_real = self.gan_model.discriminator.evaluate([label_batch, img_batch], np.ones((10, 128, 256)))
+            dis_real = self.gan_model.discriminator.evaluate(
+                [label_batch, img_batch],
+                np.ones((10, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
+            )
             metrics_dict["VALIDATION: D_real_loss"] = dis_real 
 
             print("___________________")
@@ -208,18 +214,26 @@ class NoveltyGANTrainer():
         if train_mode == "true_data":
             # Pick a pair of images and ground truth labels from data generator
             img_batch, labels_batch = self.data.next_batch(self.config.batch_size, mode="training")
-            discriminator_ground_truth = np.ones((self.config.batch_size, 128, 256))
+            discriminator_ground_truth = np.ones(
+                (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
+            )
         if train_mode == "fake_data":
             # Let generator generate fake seg maps for another image batch
             img_batch, _ = self.data.next_batch(self.config.batch_size, mode="training")
             labels_batch = self.gan_model.generator.predict(img_batch)
-            discriminator_ground_truth = np.zeros((self.config.batch_size, 128, 256))
+            discriminator_ground_truth = np.zeros(
+                (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
+            )
         if train_mode == "mixed":
             img_batch_1, labels_batch_1 = self.data.next_batch(self.config.batch_size, mode="training")
-            discriminator_ground_truth_1 = np.ones((self.config.batch_size, 128, 256))
+            discriminator_ground_truth_1 = np.ones(
+                (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
+            )
             img_batch_2, _ = self.data.next_batch(self.config.batch_size, mode="training")
             labels_batch_2 = self.gan_model.generator.predict(img_batch_2)
-            discriminator_ground_truth_2 = np.zeros((self.config.batch_size, 128, 256))
+            discriminator_ground_truth_2 = np.zeros(
+                (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
+            )
             img_batch = np.concatenate((img_batch_1, img_batch_2), axis = 0)
             labels_batch = np.concatenate((labels_batch_1, labels_batch_2), axis = 0)
             discriminator_ground_truth = np.concatenate((discriminator_ground_truth_1, discriminator_ground_truth_2))
@@ -237,7 +251,7 @@ class NoveltyGANTrainer():
         # Pick some images from TS
         # Let generator generate fake seg maps (internally) and treat them as true labels
         img_batch, label_batch = self.data.next_batch(self.config.batch_size, mode="training")
-        gan_supervision = np.ones((self.config.batch_size, 128, 256))
+        gan_supervision = np.ones((self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
         loss_gan_from_dis = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
         loss_gan_from_gen = self.gan_model.generator.train_on_batch(img_batch, label_batch)
         # Train the GAN (i.e. the generator) with fixed weights of discriminator

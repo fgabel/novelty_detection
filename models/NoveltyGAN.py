@@ -52,10 +52,11 @@ class NoveltyGAN():
         alpha:
         imagenet_filepath: Path to pretrained imagenet model
         model_filepath: Path to checkpointed model
-        num_filters: Network hyperparameter in the fcn head
+        use_pooling: Wether to use pooling in the discriminator
+        learning_rates: dictionary containing the learning rates for the various networks
     """
     def __init__(self, generator_output_classes=1000, fcn=False, upsampling=False, alpha=1, imagenet_filepath=None,
-                 model_filepath=None, learning_rates = {}):
+                 model_filepath=None, use_pooling=False, learning_rates = {}):
         super().__init__()
 
         self.name = "NoveltyGAN"
@@ -73,16 +74,25 @@ class NoveltyGAN():
         self.lr_generator = learning_rates.get('generator', 0.0001)
         self.lr_gan = learning_rates.get('gan', 0.0001)
 
+        self.pixelwise_w = 64
+        self.pixelwise_h = 32
+
+        self.use_pooling = use_pooling
+
+        if not self.use_pooling:
+            self.pixelwise_w *= 4
+            self.pixelwise_h *= 4
+
         self.generator = None
         self.discriminator = None
         self.build_generator()
-        self.build_discriminator()
+        self.build_discriminator(use_pooling=self.use_pooling)
 
         # Stick generator and discriminator together to obtain the GAN
         self.gan = None
         self.build_gan()
 
-    def build_discriminator(self):
+    def build_discriminator(self, use_pooling = False):
         """ Discriminator from the paper "Semantic Segmentation using Adversarial Networks" (https://arxiv.org/pdf/1611.08408.pdf)
 
             It receives two inputs: a segmentation map and an actual corresponding image and outputs a probability for
@@ -135,38 +145,15 @@ class NoveltyGAN():
         # i.e. (128, 256, 128)
 
         conv_1 = Conv2D(128, (3, 3), activation='relu', name='conv_1', padding='same')(concat)
-        #pool_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
-        # (128, 256, 128)
+        if use_pooling:
+            conv_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
         conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='same')(conv_1)
-        #pool_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
-        # (128, 256, 256)
+        if use_pooling:
+            conv_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
         conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(conv_2)
-        #pool_3 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_3')(conv_3)
-        # (128, 256, 256) -> (128, 256, 256)
         conv_4 = Conv2D(1, (3, 3), activation='sigmoid', name='conv_4', padding='same')(conv_3)
-        #pool_4 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_4')(conv_4)
-        # (128, 256, 256) -> (128, 256, 1)
-
-        # Augment the original architecture since our images are of larger dimensions (?)
-        #conv_5 = Conv2D(512, (3, 3), activation='relu', name='conv_5', padding='same')(conv_4)
-        #pool_5 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_5')(conv_5)
-        # (8, 16, 512) -> (4, 8, 512)
-        #conv_6 = Conv2D(1024, (3, 3), activation='relu', name='conv_6', padding='same')(pool_5)
-        #pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
-        # (4, 8, 512) -> (2, 4, 1024)
-        """
-        conv_7 = Conv2D(1024, (3, 3), activation='relu', name='conv_7', padding='same')(pool_6)
-        pool_7 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_7')(conv_7)
-        # (2, 4, 10124) -> (1, 2, 1024)
-        conv_8 = Conv2D(1, (1, 1), name='conv_8', padding='valid')(pool_7)
-        # (1, 2, 1024) -> (1, 2, 1)
-        """
-        # Flatten the output of the conv layer to obtain two outputs
-        # corresponding to the two classes real/fake
-        #flattened = Flatten()(conv_4)
-
-        # FC + Sigmoid to obtain single output (= probability that input is sampled from real distribution)
-        #out = Dense(units=1, activation='sigmoid')(flattened)
+        # use_pooling == False: (128, 256, 1)
+        # Use_pooling == True: (32, 64, 1)
 
         # discriminator = Model(inputs=[label_input, img_input], outputs=conv_4[:, :, :, 0], name="discriminator")
 

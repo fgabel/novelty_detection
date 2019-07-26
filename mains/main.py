@@ -47,8 +47,9 @@ def main():
         'generator': config.learning_rate,
         'gan': config.learning_rate
     }
-    novelty_gan = NoveltyGAN(generator_output_classes=cfg.OUTPUT_CLASSES, fcn=True, upsampling=False, alpha=0.25,
-                             imagenet_filepath=IMAGENET_FILEPATH, model_filepath=MODEL_FILEPATH, learning_rates=lr)
+    novelty_gan = NoveltyGAN(generator_output_classes=cfg.OUTPUT_CLASSES, fcn=True, upsampling=False,
+                             alpha=0.25, imagenet_filepath=IMAGENET_FILEPATH, model_filepath=MODEL_FILEPATH,
+                             use_pooling=False, learning_rates=lr)
 
     # create the trainer object
     trainer = NoveltyGANTrainer(novelty_gan, data, config)
