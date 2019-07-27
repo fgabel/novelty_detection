@@ -407,43 +407,24 @@ class NoveltyGAN():
             self.dataset_name, self.batch_size,
             self.output_height, self.output_width)
 
-    def save(self, checkpoint_dir, step, filename='model', ckpt=True, frozen=False):
-        # model_name = "DCGAN.model"
-        # checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
+    def save(self, epoch, exp_name):
+        self.generator.save_weights(os.path.join(
+            "../experiments", exp_name, "checkpoint/generator/cp-{0:04d}.ckpt".format(epoch))
+        )
+        self.discriminator.save_weights(os.path.join(
+            "../experiments", exp_name, "checkpoint/discriminator/cp-{0:04d}.ckpt".format(epoch))
+        )
 
-        filename += '.b' + str(self.batch_size)
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
+    def load(self, exp_name):
+        latest_generator = tf.train.latest_checkpoint(
+            os.path.join("../experiments", exp_name, "checkpoint/generator")
+        )
+        latest_discriminator = tf.train.latest_checkpoint(
+            os.path.join("../experiments", exp_name, "checkpoint/discriminator")
+        )
+        self.generator.load_weights(latest_generator)
+        self.discriminator.load_weights(latest_discriminator)
 
-        if ckpt:
-            self.saver.save(self.sess,
-                            os.path.join(checkpoint_dir, filename),
-                            global_step=step)
-
-        if frozen:
-            tf.train.write_graph(
-                tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ["generator_1/Tanh"]),
-                checkpoint_dir,
-                '{}-{:06d}_frz.pb'.format(filename, step),
-                as_text=False)
-
-    def load(self, checkpoint_dir):
-        # import re
-        print(" [*] Reading checkpoints...", checkpoint_dir)
-        # checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
-        # print("     ->", checkpoint_dir)
-
-        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-        if ckpt and ckpt.model_checkpoint_path:
-            ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
-            # counter = int(next(re.finditer("(\d+)(?!.*\d)",ckpt_name)).group(0))
-            counter = int(ckpt_name.split('-')[-1])
-            print(" [*] Success to read {}".format(ckpt_name))
-            return True, counter
-        else:
-            print(" [*] Failed to find a checkpoint")
-            return False, 0
 
 
 

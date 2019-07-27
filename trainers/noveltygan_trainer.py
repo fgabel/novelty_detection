@@ -96,18 +96,26 @@ class NoveltyGANTrainer():
             write_grads=True,
             write_images=True
         )
+        """
         self.modelcheckpoint = tf.keras.callbacks.ModelCheckpoint(
             filepath=os.path.join("../experiments", self.config.exp_name, "checkpoint/cp-{epoch:04d}.ckpt"),
             save_weights_only=True,
             period=0
         )
+        """
         self.tensorboardimage = TensorBoardImage(
             tag="Test",
             logs_dir=os.path.join("../experiments", self.config.exp_name, "summary")
         )
 
         self.tensorboard.set_model(self.gan_model.gan)
-        self.modelcheckpoint.set_model(self.gan_model.gan)
+        # self.modelcheckpoint.set_model(self.gan_model.gan)
+
+        if hasattr(self.config, "load_from"):
+            self.gan_model.load(self.config.load_from)
+            print("Latest checkpoint loaded")
+        else:
+            print("No checkpoint loaded")
 
     def train_epoch(self, id=0, print_images=True):
         loop = tqdm(range(self.config.num_iter_per_epoch))
@@ -198,6 +206,7 @@ class NoveltyGANTrainer():
         evaluation_loop()
 
         self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg, metrics_dict))
+        self.gan_model.save(id, self.config.exp_name)
 
         return 0
 
