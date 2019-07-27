@@ -86,13 +86,13 @@ class NoveltyGAN():
         self.generator = None
         self.discriminator = None
         self.build_generator()
-        self.build_discriminator(use_pooling=self.use_pooling)
+        self.build_discriminator()
 
         # Stick generator and discriminator together to obtain the GAN
         self.gan = None
         self.build_gan()
 
-    def build_discriminator(self, use_pooling = False):
+    def build_discriminator(self):
         """ Discriminator from the paper "Semantic Segmentation using Adversarial Networks" (https://arxiv.org/pdf/1611.08408.pdf)
 
             It receives two inputs: a segmentation map and an actual corresponding image and outputs a probability for
@@ -145,10 +145,10 @@ class NoveltyGAN():
         # i.e. (128, 256, 128)
 
         conv_1 = Conv2D(128, (3, 3), activation='relu', name='conv_1', padding='same')(concat)
-        if use_pooling:
+        if self.use_pooling:
             conv_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
         conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='same')(conv_1)
-        if use_pooling:
+        if self.use_pooling:
             conv_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
         conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(conv_2)
         conv_4 = Conv2D(1, (3, 3), activation='sigmoid', name='conv_4', padding='same')(conv_3)
