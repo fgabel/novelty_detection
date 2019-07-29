@@ -29,7 +29,11 @@ class DataGenerator:
     def next_batch(self, batch_size, mode):
         X = []  # care that this does not cause unintended consequences
         Y = []
+
+        classes_suffix = self.config.classes_suffix
+        OUTPUT_CLASSES = self.config.OUTPUT_CLASSES
         self.mode = mode
+        
         self.data_name_list = get_training_data_list(self.config.dataset_folders[mode] + '/images',
                                                      self.config.images_suffix)
         batch = np.random.choice(self.data_name_list, batch_size)
@@ -38,13 +42,16 @@ class DataGenerator:
                                                self.config.images_directory_name, self.config.images_suffix,
                                                data_mean=self.config.data_mean, data_std=self.config.data_std)
 
+            if mode == "out_of_distribution_images":
+                classes_suffix = '_gtFine_labelIds.png'
+                OUTPUT_CLASSES = 1
             if self.binary_labels:
                 label_data = get_binary_label_data(self.mode, data_name, self.config.dataset_folders,
-                                                   self.config.classes_directory_name, self.config.classes_suffix,
-                                                   self.config.OUTPUT_CLASSES)
+                                                   self.config.classes_directory_name, classes_suffix,
+                                                   OUTPUT_CLASSES)
             else:
                 label_data = get_label_data(self.mode, data_name, self.config.dataset_folders,
-                                            self.config.classes_directory_name, self.config.classes_suffix)
+                                            self.config.classes_directory_name, classes_suffix)
 
             X.append(image_data_volume)
             Y.append(label_data)
