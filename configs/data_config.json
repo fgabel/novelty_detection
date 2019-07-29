@@ -9,8 +9,9 @@
   "classes_suffix": "_gtFine_color.png",
   "dataset_folders": {
     "training": "../../data/leftImg8bit/train",
-    "validation": "../../data/leftImg8bit/val"
-  },
+    "validation": "../../data/leftImg8bit/val",
+    "out_of_distribution_images": "../../data/leftImg8bit/ood"
+},
   "BASE_PATH": "",
   "MODEL_FILEPATH": "../models/semseg_model.h5",
   "IMAGENET_FILEPATH": "../models/imagenet_weights_0_25.h5"
