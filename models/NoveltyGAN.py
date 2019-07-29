@@ -29,8 +29,8 @@ from utils.layer_utils import Softmax4D
 # Note: this method is just placeholder by now
 # TODO: add an additional moduke for handling optimizers
 
-def adam_optimizer():
-    return Adam(lr=0.0001, beta_1=0.99, beta_2=0.999, epsilon=1e-6)
+def adam_optimizer(learning_rate = 0.0001):
+    return Adam(lr=learning_rate, beta_1=0.99, beta_2=0.999, epsilon=1e-6)
 
 def conv_out_size_same(size, stride):
     return int(math.ceil(float(size) / float(stride)))
@@ -52,10 +52,11 @@ class NoveltyGAN():
         alpha:
         imagenet_filepath: Path to pretrained imagenet model
         model_filepath: Path to checkpointed model
-        num_filters: Network hyperparameter in the fcn head
+        use_pooling: Wether to use pooling in the discriminator
+        learning_rates: dictionary containing the learning rates for the various networks
     """
     def __init__(self, generator_output_classes=1000, fcn=False, upsampling=False, alpha=1, imagenet_filepath=None,
-                 model_filepath=None):
+                 model_filepath=None, use_pooling=False, learning_rates = {}):
         super().__init__()
 
         self.name = "NoveltyGAN"
@@ -68,6 +69,19 @@ class NoveltyGAN():
         # TODO: set self.num_filters accordingly (see down below); dummy initialization by now
         self.num_filters = 32
         # Setup generator and discriminator
+
+        self.lr_discriminator = learning_rates.get('discriminator', 0.0001)
+        self.lr_generator = learning_rates.get('generator', 0.0001)
+        self.lr_gan = learning_rates.get('gan', 0.0001)
+
+        self.pixelwise_w = 64
+        self.pixelwise_h = 32
+
+        self.use_pooling = use_pooling
+
+        if not self.use_pooling:
+            self.pixelwise_w *= 4
+            self.pixelwise_h *= 4
 
         self.generator = None
         self.discriminator = None
@@ -131,41 +145,23 @@ class NoveltyGAN():
         # i.e. (128, 256, 128)
 
         conv_1 = Conv2D(128, (3, 3), activation='relu', name='conv_1', padding='same')(concat)
-        #pool_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
-        # (128, 256, 128)
+        if self.use_pooling:
+            conv_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
         conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='same')(conv_1)
-        #pool_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
-        # (128, 256, 256)
+        if self.use_pooling:
+            conv_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
         conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(conv_2)
-        #pool_3 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_3')(conv_3)
-        # (128, 256, 256) -> (128, 256, 256)
         conv_4 = Conv2D(1, (3, 3), activation='sigmoid', name='conv_4', padding='same')(conv_3)
-        #pool_4 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_4')(conv_4)
-        # (128, 256, 256) -> (128, 256, 1)
+        # use_pooling == False: (128, 256, 1)
+        # Use_pooling == True: (32, 64, 1)
 
-        # Augment the original architecture since our images are of larger dimensions (?)
-        #conv_5 = Conv2D(512, (3, 3), activation='relu', name='conv_5', padding='same')(conv_4)
-        #pool_5 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_5')(conv_5)
-        # (8, 16, 512) -> (4, 8, 512)
-        #conv_6 = Conv2D(1024, (3, 3), activation='relu', name='conv_6', padding='same')(pool_5)
-        #pool_6 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_6')(conv_6)
-        # (4, 8, 512) -> (2, 4, 1024)
-        """
-        conv_7 = Conv2D(1024, (3, 3), activation='relu', name='conv_7', padding='same')(pool_6)
-        pool_7 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_7')(conv_7)
-        # (2, 4, 10124) -> (1, 2, 1024)
-        conv_8 = Conv2D(1, (1, 1), name='conv_8', padding='valid')(pool_7)
-        # (1, 2, 1024) -> (1, 2, 1)
-        """
-        # Flatten the output of the conv layer to obtain two outputs
-        # corresponding to the two classes real/fake
-        #flattened = Flatten()(conv_4)
+        # discriminator = Model(inputs=[label_input, img_input], outputs=conv_4[:, :, :, 0], name="discriminator")
 
-        # FC + Sigmoid to obtain single output (= probability that input is sampled from real distribution)
-        #out = Dense(units=1, activation='sigmoid')(flattened)
+        conv_4 = tf.keras.layers.Lambda(lambda x: tf.keras.backend.squeeze(x, -1))(conv_4)
 
-        discriminator = Model(inputs=[label_input, img_input], outputs=conv_4[:, :, :, 0], name="discriminator")
-        discriminator.compile(loss=tf.keras.losses.BinaryCrossentropy(), optimizer=adam_optimizer())
+        discriminator = Model(inputs=[label_input, img_input], outputs=conv_4, name="discriminator")
+        discriminator.compile(loss=tf.keras.losses.BinaryCrossentropy(),
+                              optimizer=adam_optimizer(self.lr_discriminator))
 
         self.discriminator = discriminator
 
@@ -350,7 +346,7 @@ class NoveltyGAN():
             loss_weights["softmax_output"] = 1.
             generator.trainable = False
             generator.compile(
-                optimizer=adam_optimizer(),
+                optimizer=adam_optimizer(self.lr_generator),
                 loss=loss,
                 loss_weights=loss_weights
             )
@@ -378,9 +374,28 @@ class NoveltyGAN():
         x = self.generator(img_input)
         # Note: we treat the output of the generator for img_input as input to discriminator
         gan_output = self.discriminator([x, img_input])
-        # gan = Model(inputs=[label_input, img_input], outputs=gan_output)
-        gan = Model(inputs=img_input, outputs=gan_output, name="GAN")
-        gan.compile(loss=tf.keras.losses.BinaryCrossentropy(), optimizer=adam_optimizer(), metrics=['accuracy'])
+        # gan = Model(inputs=img_input, outputs=gan_output, name="GAN")
+        gan = Model(inputs=img_input, outputs=[x, gan_output], name="GAN")
+
+        loss = {}
+        loss_weights = {}
+        loss["generator"] = "categorical_crossentropy"
+        loss_weights["generator"] = 0.2
+        loss["discriminator"] = "binary_crossentropy"
+        loss_weights["discriminator"] = 0.8
+
+        gan.compile(
+            optimizer=adam_optimizer(self.lr_gan),
+            loss=loss,
+            loss_weights=loss_weights,
+            metrics=['accuracy']
+        )
+
+        """
+        gan.compile(loss=tf.keras.losses.BinaryCrossentropy(),
+                    optimizer=adam_optimizer(self.lr_gan),
+                    metrics=['accuracy'])
+        """
         self.gan = gan
 
     def sampler(self, z, y=None):
@@ -392,43 +407,24 @@ class NoveltyGAN():
             self.dataset_name, self.batch_size,
             self.output_height, self.output_width)
 
-    def save(self, checkpoint_dir, step, filename='model', ckpt=True, frozen=False):
-        # model_name = "DCGAN.model"
-        # checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
+    def save(self, epoch, exp_name):
+        self.generator.save_weights(os.path.join(
+            "../experiments", exp_name, "checkpoint/generator/cp-{0:04d}.ckpt".format(epoch))
+        )
+        self.discriminator.save_weights(os.path.join(
+            "../experiments", exp_name, "checkpoint/discriminator/cp-{0:04d}.ckpt".format(epoch))
+        )
 
-        filename += '.b' + str(self.batch_size)
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
+    def load(self, exp_name):
+        latest_generator = tf.train.latest_checkpoint(
+            os.path.join("../experiments", exp_name, "checkpoint/generator")
+        )
+        latest_discriminator = tf.train.latest_checkpoint(
+            os.path.join("../experiments", exp_name, "checkpoint/discriminator")
+        )
+        self.generator.load_weights(latest_generator)
+        self.discriminator.load_weights(latest_discriminator)
 
-        if ckpt:
-            self.saver.save(self.sess,
-                            os.path.join(checkpoint_dir, filename),
-                            global_step=step)
-
-        if frozen:
-            tf.train.write_graph(
-                tf.graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ["generator_1/Tanh"]),
-                checkpoint_dir,
-                '{}-{:06d}_frz.pb'.format(filename, step),
-                as_text=False)
-
-    def load(self, checkpoint_dir):
-        # import re
-        print(" [*] Reading checkpoints...", checkpoint_dir)
-        # checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
-        # print("     ->", checkpoint_dir)
-
-        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-        if ckpt and ckpt.model_checkpoint_path:
-            ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
-            # counter = int(next(re.finditer("(\d+)(?!.*\d)",ckpt_name)).group(0))
-            counter = int(ckpt_name.split('-')[-1])
-            print(" [*] Success to read {}".format(ckpt_name))
-            return True, counter
-        else:
-            print(" [*] Failed to find a checkpoint")
-            return False, 0
 
 
 
