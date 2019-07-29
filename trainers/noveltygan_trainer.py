@@ -29,31 +29,47 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         generated_segmaps = logs["generated_segmaps"]
         image = logs["corresponding_image"]
+        segmentation_map = True
+        if(len(generated_segmaps.shape) != 4):
+            segmentation_map = False
+            generated_segmaps = tf.expand_dims(generated_segmaps, -1)
         batch_size, h, w, c = generated_segmaps.shape
         seg_summaries = []
-
+        
         for nr in range(batch_size):
-            seg = binary_labels_to_image(generated_segmaps[nr], color_palette=COLOR_PALETTE)
+            if segmentation_map:
+                n_c = 3
+                seg = binary_labels_to_image(generated_segmaps[nr], color_palette=COLOR_PALETTE)
+            else:
+                n_c = 1
+                seg = generated_segmaps[nr]
             im = cv2.resize(image[nr], dsize=(256, 128), interpolation=cv2.INTER_CUBIC)
             s = BytesIO()
-            output_real_images = 1
-            if output_real_images == 1:  # whether to add real images to output segmaps or not
+                    
+            
+            if segmentation_map:  # whether to add real images to output segmaps or not
                 scaler = MinMaxScaler(feature_range=(0.01, 0.99))
                 im[:, :, 0] = scaler.fit_transform(im[:, :, 0])
                 im[:, :, 1] = scaler.fit_transform(im[:, :, 1])
                 im[:, :, 2] = scaler.fit_transform(im[:, :, 2])
-                res = np.zeros((seg.shape[0], seg.shape[1] * 2, 3))
+                res = np.zeros((seg.shape[0], seg.shape[1] * 2, n_c))
+                
                 res[:, 0:seg.shape[1], :] = seg
                 res[:, seg.shape[1]:, :] = im
+                 
                 plt.imsave(s, res, format='png')
             else:
+                
+                seg = tf.tile(seg, [1,1,3]) # grayscale
+                
+                seg = K.get_value(seg)
                 plt.imsave(s, seg, format='png')
             # Write the image to a string
 
             # Create an Image object
             seg_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
                                        height=h,
-                                       width=(1 + output_real_images) * w)  # double width if we want real images
+                                       width=(1 + int(segmentation_map)) * w)  # double width if we want real images
             # Create a Summary value
             seg_summaries.append(tf.Summary.Value(tag='seg_%s/%d' % (self.tag, nr),
                                                   image=seg_sum))
@@ -102,10 +118,13 @@ class NoveltyGANTrainer():
             period=0
         )
         self.tensorboardimage = TensorBoardImage(
-            tag="Test",
+            tag="Segmentation",
             logs_dir=os.path.join("../experiments", self.config.exp_name, "summary")
         )
-
+        self.tfimage_of_novelty = TensorBoardImage(
+            tag="Novelty or not?",
+            logs_dir=os.path.join("../experiments", self.config.exp_name, "summary")
+        )
         self.tensorboard.set_model(self.gan_model.gan)
         self.modelcheckpoint.set_model(self.gan_model.gan)
 
@@ -135,19 +154,27 @@ class NoveltyGANTrainer():
         #self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
         #self.modelcheckpoint.on_epoch_end(id)
 
-        if 1:  # print images
-            img_batch, label_batch = self.data.next_batch(batch_size=1, mode="validation")
+        # print images
+        img_batch, label_batch = self.data.next_batch(batch_size=5, mode="validation")
+        generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
 
-            generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
-
-            self.tensorboardimage.on_epoch_end(id, {
+        img_batch_ood, label_batch_ood = self.data.next_batch(batch_size=5, mode="out_of_distribution_images")
+        discriminator_predictions_on_ood = self.gan_model.gan.predict_on_batch(img_batch_ood)
+        #plt.save(discriminator_predictions_on_ood)
+        self.tensorboardimage.on_epoch_end(id, {
                 'generated_segmaps': softmax_output_to_binary_labels(generated_segmaps),
                 'corresponding_image': img_batch
             })
+        self.tfimage_of_novelty.on_epoch_end(id, {
+                'generated_segmaps': discriminator_predictions_on_ood,
+                'corresponding_image': img_batch_ood
+            })
 
+        
         img_batch, label_batch = self.data.next_batch(batch_size=10,
                                                       mode="validation")
 
+        
         def evaluation_loop():
             """This function evaluates both the discriminator and the generator after each epoch"""
             # Discriminator evaluation on fake data
