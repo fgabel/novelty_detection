@@ -167,7 +167,8 @@ class NoveltyGANTrainer():
         generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
 
         img_batch_ood, label_batch_ood = self.data.next_batch(batch_size=5, mode="out_of_distribution_images")
-        discriminator_predictions_on_ood = self.gan_model.gan.predict_on_batch(img_batch_ood)
+        _, discriminator_predictions_on_ood = self.gan_model.gan.predict_on_batch(img_batch_ood)
+        print("DEBUG", discriminator_predictions_on_ood.shape)
         #plt.save(discriminator_predictions_on_ood)
         self.tensorboardimage.on_epoch_end(id, {
                 'generated_segmaps': softmax_output_to_binary_labels(generated_segmaps),
