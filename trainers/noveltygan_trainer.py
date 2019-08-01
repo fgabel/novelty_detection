@@ -14,6 +14,8 @@ from utils.data_utils import binary_labels_to_image, softmax_output_to_binary_la
 from utils.data_utils import COLOR_PALETTE
 from utils.utils import calculate_confusion_matrix, normalize_confusion_matrix, evaluate_confusion_matrix
 
+from utils.utils import iou_experimental
+
 """
     Experimental BEGIN
 """
@@ -161,14 +163,13 @@ class NoveltyGANTrainer():
         #self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
         #self.modelcheckpoint.on_epoch_end(id)
 
-
         # print images
         img_batch, label_batch = self.data.next_batch(batch_size=5, mode="validation")
         generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
 
         img_batch_ood, label_batch_ood = self.data.next_batch(batch_size=5, mode="out_of_distribution_images")
         _, discriminator_predictions_on_ood = self.gan_model.gan.predict_on_batch(img_batch_ood)
-        print("DEBUG", discriminator_predictions_on_ood.shape)
+
         #plt.save(discriminator_predictions_on_ood)
         self.tensorboardimage.on_epoch_end(id, {
                 'generated_segmaps': softmax_output_to_binary_labels(generated_segmaps),
@@ -213,7 +214,7 @@ class NoveltyGANTrainer():
             generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
             print(self.gan_model.discriminator.predict([generated_segmaps, img_batch]))
             print("___________________")
-            if 1:
+            if 0:
                 fcn_iou_function = K.function([self.gan_model.generator.get_layer("rgb_input").input, K.learning_phase()],
                     [self.gan_model.generator.get_layer("softmax_output").output])
                 pred_batch = fcn_iou_function([img_batch, 0])[0]
@@ -232,6 +233,11 @@ class NoveltyGANTrainer():
                 # class_TNR] = evaluate_confusion_matrix(confusion_matrix)
                 metrics_dict["validation IoU"] = IoU
                 print("IoU:", IoU)
+            if 1:
+                pred_batch = self.gan_model.generator.predict_on_batch(img_batch)
+                overall_iou = iou_experimental(pred_batch, label_batch)
+                metrics_dict["validation IoU"] = overall_iou
+                print("IoU:", overall_iou)
         evaluation_loop()
 
         self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg, metrics_dict))

@@ -4,7 +4,7 @@ import skimage.io
 import numpy as np
 from tensorflow.math import argmax
 from tensorflow.keras.backend import flatten
-
+from .data_utils import softmax_output_to_binary_labels
 
 def get_args():
     argparser = argparse.ArgumentParser(description=__doc__)
@@ -82,3 +82,14 @@ def evaluate_confusion_matrix( confusion_matrix):
 	mean_ACC = np.mean(class_TP / (class_TP + class_FN).astype(np.float))
 	overall_IoU = np.mean(class_IoU)
 	return pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR, class_TNR
+
+def iou_experimental(pred_batch, label_batch):
+	pred_batch_binarized = softmax_output_to_binary_labels(pred_batch)
+
+	intersection = np.logical_and(pred_batch_binarized, label_batch)
+	union = np.logical_or(pred_batch_binarized, label_batch)
+	intersection_sum = np.sum(intersection)
+	union_sum = np.sum(union)
+	overall_iou = intersection_sum / union_sum
+
+	return overall_iou
