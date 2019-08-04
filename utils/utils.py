@@ -82,12 +82,3 @@ def evaluate_confusion_matrix( confusion_matrix):
 	mean_ACC = np.mean(class_TP / (class_TP + class_FN).astype(np.float))
 	overall_IoU = np.mean(class_IoU)
 	return pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR, class_TNR
-
-def pixelwise_accuracy(pred_batch, label_batch):
-	pred_batch_binarized = softmax_output_to_binary_labels(pred_batch)
-
-	equal = np.equal(pred_batch_binarized, label_batch)
-
-	accuracy = np.sum(equal) / pred_batch.size
-
-	return accuracy

@@ -14,8 +14,6 @@ from utils.data_utils import binary_labels_to_image, softmax_output_to_binary_la
 from utils.data_utils import COLOR_PALETTE
 from utils.utils import calculate_confusion_matrix, normalize_confusion_matrix, evaluate_confusion_matrix
 
-from utils.utils import pixelwise_accuracy
-
 """
     Experimental BEGIN
 """
@@ -233,11 +231,6 @@ class NoveltyGANTrainer():
                 # class_TNR] = evaluate_confusion_matrix(confusion_matrix)
                 metrics_dict["validation IoU"] = IoU
                 print("IoU:", IoU)
-            if 1:
-                pred_batch = self.gan_model.generator.predict_on_batch(img_batch)
-                pixelwise_acc = pixelwise_accuracy(pred_batch, label_batch)
-                metrics_dict["pixelwise accuracy"] = pixelwise_acc
-                print("Pixelwise accuracy:", pixelwise_acc)
         evaluation_loop()
 
         self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg, metrics_dict))
