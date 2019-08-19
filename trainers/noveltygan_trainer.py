@@ -319,10 +319,11 @@ class NoveltyGANTrainer():
         #train_loss_discriminator_true = self.train_step_discriminator(train_mode="true_data")
         #train_loss_discriminator_false = self.train_step_discriminator(train_mode="fake_data")
 
+        train_loss_discriminator_mixed = None
+        for _ in range(2):
+            train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
 
-        train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
-        for _ in range(8):
-            train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
+        train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
 
 
         return train_loss_gan, train_loss_discriminator_mixed, train_loss_gan_from_dis, train_loss_gan_from_gen
