@@ -14,11 +14,6 @@ from utils.data_utils import binary_labels_to_image, softmax_output_to_binary_la
 from utils.data_utils import COLOR_PALETTE
 from utils.utils import calculate_confusion_matrix, normalize_confusion_matrix, evaluate_confusion_matrix
 
-"""
-    Experimental BEGIN
-"""
-
-
 class TensorBoardImage(tf.keras.callbacks.Callback):
     def __init__(self, tag, logs_dir):
         super().__init__()
@@ -79,11 +74,6 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
         self.writer.add_summary(seg_summary, epoch)
 
         return
-
-
-"""
-    Experimental END
-"""
 
 
 def named_logs(model, logs, metrics_dict = None):
@@ -162,10 +152,12 @@ class NoveltyGANTrainer():
         #self.modelcheckpoint.on_epoch_end(id)
 
         # print images
-        img_batch, label_batch = self.data.next_batch(batch_size=5, mode="validation")
+        # img_batch, label_batch = self.data.next_batch(batch_size=5, mode="validation")
+        img_batch, label_batch = self.data['val'].next_batch()
         generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
 
-        img_batch_ood, label_batch_ood = self.data.next_batch(batch_size=5, mode="out_of_distribution_images")
+        # img_batch_ood, label_batch_ood = self.data.next_batch(batch_size=5, mode="out_of_distribution_images")
+        img_batch_ood, label_batch_ood = self.data['ood'].next_batch()
         _, discriminator_predictions_on_ood = self.gan_model.gan.predict_on_batch(img_batch_ood)
 
         #plt.save(discriminator_predictions_on_ood)
@@ -179,9 +171,9 @@ class NoveltyGANTrainer():
             })
 
         
-        img_batch, label_batch = self.data.next_batch(batch_size=10,
-                                                      mode="validation")
-
+        # img_batch, label_batch = self.data.next_batch(batch_size=10,
+        #                                              mode="validation")
+        img_batch, label_batch = self.data['val'].next_batch()
         
         def evaluation_loop():
             """This function evaluates both the discriminator and the generator after each epoch"""
@@ -253,23 +245,27 @@ class NoveltyGANTrainer():
 
         if train_mode == "true_data":
             # Pick a pair of images and ground truth labels from data generator
-            img_batch, labels_batch = self.data.next_batch(self.config.batch_size, mode="training")
+            # img_batch, labels_batch = self.data.next_batch(self.config.batch_size, mode="training")
+            img_batch, labels_batch = self.data['train'].next_batch()
             discriminator_ground_truth = np.ones(
                 (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
             )
         if train_mode == "fake_data":
             # Let generator generate fake seg maps for another image batch
-            img_batch, _ = self.data.next_batch(self.config.batch_size, mode="training")
+            # img_batch, _ = self.data.next_batch(self.config.batch_size, mode="training")
+            img_batch, _ = self.data['train'].next_batch()
             labels_batch = self.gan_model.generator.predict(img_batch)
             discriminator_ground_truth = np.zeros(
                 (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
             )
         if train_mode == "mixed":
-            img_batch_1, labels_batch_1 = self.data.next_batch(self.config.batch_size, mode="training")
+            # img_batch_1, labels_batch_1 = self.data.next_batch(self.config.batch_size, mode="training")
+            img_batch_1, labels_batch_1 = self.data['train'].next_batch()
             discriminator_ground_truth_1 = np.ones(
                 (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
             )
-            img_batch_2, _ = self.data.next_batch(self.config.batch_size, mode="training")
+            # img_batch_2, _ = self.data.next_batch(self.config.batch_size, mode="training")
+            img_batch_2, _ = self.data['train'].next_batch()
             labels_batch_2 = self.gan_model.generator.predict(img_batch_2)
             discriminator_ground_truth_2 = np.zeros(
                 (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
@@ -290,7 +286,8 @@ class NoveltyGANTrainer():
 
         # Pick some images from TS
         # Let generator generate fake seg maps (internally) and treat them as true labels
-        img_batch, label_batch = self.data.next_batch(self.config.batch_size, mode="training")
+        # img_batch, label_batch = self.data.next_batch(self.config.batch_size, mode="training")
+        img_batch, label_batch = self.data['train'].next_batch()
         gan_supervision = np.ones((self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
 
         logs = self.gan_model.gan.train_on_batch(img_batch, [label_batch, gan_supervision])
