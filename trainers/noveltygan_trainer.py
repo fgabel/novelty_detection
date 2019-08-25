@@ -149,13 +149,16 @@ class NoveltyGANTrainer():
             #log_gan, train_loss_discriminator_true, train_loss_discriminator_fake = self.train_step()
             log_gan, train_loss_discriminator_mixed, train_loss_gan_from_dis_, train_loss_gan_from_gen_ = self.train_step()
             logs.append(log_gan)
+            #print('i expected this to be accurary: ', train_loss_gan_from_dis_)
             train_loss_gan_from_dis.append(train_loss_gan_from_dis_)
             train_loss_gan_from_gen.append(train_loss_gan_from_gen_)
             train_loss_mixed.append(train_loss_discriminator_mixed)
+            
         logs_avg = np.mean(logs, axis=0)
         #metrics_dict['train loss discriminator on true data'] = np.mean(train_loss_dt)
         #metrics_dict['train loss discriminator on fake data'] = np.mean(train_loss_df)
         metrics_dict["TRAIN: D_mixed_loss"] = np.mean(train_loss_mixed)
+        print("TRAIN: Disriminators (mixed data) loss:", np.mean(train_loss_mixed))
         metrics_dict["TRAIN: GAN from D"] = np.mean(train_loss_gan_from_dis)
         metrics_dict["TRAIN: GAN from G"] = np.mean(train_loss_gan_from_gen)
         #self.gan_model.gan.save_weights(os.path.join("../experiments", self.config.exp_name, "checkpoint/my_model.h5"))
@@ -207,12 +210,12 @@ class NoveltyGANTrainer():
             metrics_dict["VALIDATION: D_real_loss"] = dis_real 
 
             print("___________________")
-            print("[VALIDATION] Accucary real data: ")
-            print(self.gan_model.discriminator.predict([label_batch, img_batch]))
-            print("[VALIDATION] Predictionsfake data: ")
-            generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
-            print(self.gan_model.discriminator.predict([generated_segmaps, img_batch]))
-            print("___________________")
+            #print("[VALIDATION] Accucary real data: ")
+            #print(self.gan_model.discriminator.predict([label_batch, img_batch]))
+            #print("[VALIDATION] Predictionsfake data: ")
+            #generated_segmaps = self.gan_model.generator.predict_on_batch(img_batch)
+            #print(self.gan_model.discriminator.predict([generated_segmaps, img_batch]))
+            #print("___________________")
             if 1:
                 fcn_iou_function = K.function([self.gan_model.generator.get_layer("rgb_input").input, K.learning_phase()],
                     [self.gan_model.generator.get_layer("softmax_output").output])
@@ -222,16 +225,22 @@ class NoveltyGANTrainer():
                 #pred_batch = self.gan_model.generator(img_batch)  # (5, 128, 256, 19)
 
 
-                confusion_matrix, IoU = calculate_confusion_matrix(pred_batch, label_batch)
-                #eval_out ={}
-                #eval_out['confMatrix'] = confusion_matrix
+                confusion_matrix, overall_pixelwise_acc = calculate_confusion_matrix(pred_batch, label_batch)
+                eval_out ={}
+                eval_out['confMatrix'] = confusion_matrix
 
-                #eval_out['norm_confMatrix'] = normalize_confusion_matrix(confusion_matrix)
+                eval_out['norm_confMatrix'] = normalize_confusion_matrix(confusion_matrix)
 
-                #[pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
-                # class_TNR] = evaluate_confusion_matrix(confusion_matrix)
-                metrics_dict["validation IoU"] = IoU
-                print("IoU:", IoU)
+                [pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
+                 class_TNR] = evaluate_confusion_matrix(confusion_matrix)
+                available_classes = ["BICYCLE", "BUILDING", "BUS", "CAR", "FENCE", "MOTORCYCLE", "PERSON", "POLE", "RIDER", "ROAD", "SIDEWALK", "SKY", "TERRAIN", "TRAFFIC_LIGHT", "TRAFFIC_SIGN", "TRAIN", "TRUCK", "VEGETATION", "WALL"]
+                print(available_classes, "\n")
+                print("Pixel Accuracy, mean accuracy, overall_iou, class_iou: \n")
+                print(pixel_ACC, mean_ACC, overall_IoU, class_IoU)
+                metrics_dict["validation overall pixelwise accuracy"] = overall_pixelwise_acc
+                metrics_dict["overall_iou"] = overall_IoU
+                print("overall_pixelwise_acc:", overall_pixelwise_acc)
+                print("overall_IoU:", overall_IoU)
         evaluation_loop()
 
         self.tensorboard.on_epoch_end(id, logs=named_logs(self.gan_model.gan, logs_avg, metrics_dict))
@@ -295,7 +304,8 @@ class NoveltyGANTrainer():
         gan_supervision = np.ones((self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
 
         logs = self.gan_model.gan.train_on_batch(img_batch, [label_batch, gan_supervision])
-
+        print("Train step gan logs below")
+        print(logs)
         """
             Note: self.gan_model.gan.metrics_names [
                 'loss',
@@ -306,7 +316,7 @@ class NoveltyGANTrainer():
             ]
         """
 
-        # loss_gan_from_dis = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
+        #loss_gan_from_dis = self.gan_model.gan.train_on_batch(img_batch, gan_supervision)
         # loss_gan_from_gen = self.gan_model.generator.train_on_batch(img_batch, label_batch)
         # Train the GAN (i.e. the generator) with fixed weights of discriminator
         
@@ -320,10 +330,10 @@ class NoveltyGANTrainer():
         #train_loss_discriminator_true = self.train_step_discriminator(train_mode="true_data")
         #train_loss_discriminator_false = self.train_step_discriminator(train_mode="fake_data")
 
-
-        train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
-        for _ in range(8):
-            train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
+        for _ in range(20):
+            train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
+       
+        train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
 
 
         return train_loss_gan, train_loss_discriminator_mixed, train_loss_gan_from_dis, train_loss_gan_from_gen

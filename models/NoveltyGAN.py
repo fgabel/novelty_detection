@@ -344,7 +344,7 @@ class NoveltyGAN():
 
             loss["softmax_output"] = "categorical_crossentropy"
             loss_weights["softmax_output"] = 1.
-            generator.trainable = False
+            generator.trainable = True
             generator.compile(
                 optimizer=adam_optimizer(self.lr_generator),
                 loss=loss,
@@ -380,9 +380,9 @@ class NoveltyGAN():
         loss = {}
         loss_weights = {}
         loss["generator"] = "categorical_crossentropy"
-        loss_weights["generator"] = 0.2
+        loss_weights["generator"] = 0
         loss["discriminator"] = "binary_crossentropy"
-        loss_weights["discriminator"] = 0.8
+        loss_weights["discriminator"] = 1
 
         gan.compile(
             optimizer=adam_optimizer(self.lr_gan),
