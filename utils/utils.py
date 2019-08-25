@@ -4,7 +4,7 @@ import skimage.io
 import numpy as np
 from tensorflow.math import argmax
 from tensorflow.keras.backend import flatten
-
+from .data_utils import softmax_output_to_binary_labels
 
 def get_args():
     argparser = argparse.ArgumentParser(description=__doc__)
