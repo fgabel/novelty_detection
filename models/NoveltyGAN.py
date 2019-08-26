@@ -8,10 +8,12 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import glorot_normal, Zeros, Constant
 from tensorflow.keras.layers import Input, add
 from tensorflow.keras.layers import Reshape
-from tensorflow.keras.layers import Conv2D, MaxPooling2D
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, AveragePooling2D
+from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import Flatten, Dense, Dropout
 from tensorflow.keras.layers import InputSpec, Concatenate
+from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.optimizers import Adam
 K.set_image_data_format('channels_last')
 import os
@@ -27,10 +29,10 @@ from six.moves import xrange
 from utils.layer_utils import Softmax4D
 
 # Note: this method is just placeholder by now
-# TODO: add an additional moduke for handling optimizers
+# TODO: add an additional module for handling optimizers
 
 def adam_optimizer(learning_rate = 0.0001):
-    return Adam(lr=learning_rate, beta_1=0.99, beta_2=0.999, epsilon=1e-6)
+    return Adam(lr=learning_rate, beta_1=0.5, beta_2=0.5, epsilon=1e-6)
 
 def conv_out_size_same(size, stride):
     return int(math.ceil(float(size) / float(stride)))
@@ -108,7 +110,10 @@ class NoveltyGAN():
         img_input = Input(shape=(1024, 2048, 3))
 
         # Left branch
-        conv_left_1 = Conv2D(64, (5, 5), activation='relu', name='conv_left_1', padding='same')(label_input)
+        # conv_left_1 = Conv2D(64, (5, 5), activation='relu', name='conv_left_1', padding='same')(label_input)
+        conv_left_1 = Conv2D(64, (5, 5), name='conv_left_1', padding='same')(label_input)
+        conv_left_1 = LeakyReLU(alpha=0.2)(conv_left_1)
+        conv_left_1 = BatchNormalization()(conv_left_1)
         # (For non-upsampled label map) (128, 256) -> (128, 256)
 
         """
@@ -126,17 +131,26 @@ class NoveltyGAN():
 
         # Right branch
         # Note: Added one more stack of conv+relu+pool to get dimensions right
-        conv_right_1 = Conv2D(4, (5, 5), activation='relu', name='conv_right_1', padding='same')(img_input)
+        # conv_right_1 = Conv2D(4, (5, 5), activation='relu', name='conv_right_1', padding='same')(img_input)
+        conv_right_1 = Conv2D(4, (5, 5), name='conv_right_1', padding='same')(img_input)
+        conv_right_1 = LeakyReLU(alpha=0.2)(conv_right_1)
         # (1024, 2048) -> (1024, 2048)
-        pool_right_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_right_1')(conv_right_1)
+        pool_right_1 = AveragePooling2D((2, 2), strides=(2, 2), name='pool_right_1')(conv_right_1)
+        pool_right_1 = BatchNormalization()(pool_right_1)
         # (1024, 2048) -> (512, 1024)
-        conv_right_2 = Conv2D(16, (5, 5), activation='relu', name='conv_right_2', padding='same')(pool_right_1)
+        # conv_right_2 = Conv2D(16, (5, 5), activation='relu', name='conv_right_2', padding='same')(pool_right_1)
+        conv_right_2 = Conv2D(16, (5, 5), name='conv_right_2', padding='same')(pool_right_1)
+        conv_right_2 = LeakyReLU(alpha=0.2)(conv_right_2)
         # (512, 1024) -> (512, 1024)
-        pool_right_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_right_2')(conv_right_2)
+        pool_right_2 = AveragePooling2D((2, 2), strides=(2, 2), name='pool_right_2')(conv_right_2)
+        pool_right_2 = BatchNormalization()(pool_right_2)
         # (512, 1024) -> (256, 512)
-        conv_right_3 = Conv2D(64, (5, 5), activation='relu', name='conv_right_3', padding='same')(pool_right_2)
+        # conv_right_3 = Conv2D(64, (5, 5), activation='relu', name='conv_right_3', padding='same')(pool_right_2)
+        conv_right_3 = Conv2D(64, (5, 5), name='conv_right_3', padding='same')(pool_right_2)
+        conv_right_3 = LeakyReLU(alpha=0.2)(conv_right_3)
         # (256, 512) -> (256, 512)
-        pool_right_3 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_right_3')(conv_right_3)
+        pool_right_3 = AveragePooling2D((2, 2), strides=(2, 2), name='pool_right_3')(conv_right_3)
+        pool_right_3 = BatchNormalization()(pool_right_3)
         # (256, 512) -> (128, 256)
 
         # Merge the outputs of the two branches together
@@ -144,13 +158,22 @@ class NoveltyGAN():
         # Concat now has 64*2 = 128 channels
         # i.e. (128, 256, 128)
 
-        conv_1 = Conv2D(128, (3, 3), activation='relu', name='conv_1', padding='same')(concat)
+        # conv_1 = Conv2D(128, (3, 3), activation='relu', name='conv_1', padding='same')(concat)
+        conv_1 = Conv2D(128, (3, 3), name='conv_1', padding='same')(concat)
+        conv_1 = LeakyReLU(alpha=0.2)(conv_1)
         if self.use_pooling:
             conv_1 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_1')(conv_1)
-        conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='same')(conv_1)
+        conv_1 = BatchNormalization()(conv_1)
+        # conv_2 = Conv2D(256, (3, 3), activation='relu', name='conv_2', padding='same')(conv_1)
+        conv_2 = Conv2D(256, (3, 3), name='conv_2', padding='same')(conv_1)
+        conv_2 = LeakyReLU(alpha=0.2)(conv_2)
         if self.use_pooling:
             conv_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
-        conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(conv_2)
+        conv_2 = BatchNormalization()(conv_2)
+        # conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(conv_2)
+        conv_3 = Conv2D(256, (3, 3), name='conv_3', padding='same')(conv_2)
+        conv_3 = LeakyReLU(alpha=0.2)(conv_3)
+        conv_3 = BatchNormalization()(conv_3)
         conv_4 = Conv2D(1, (3, 3), activation='sigmoid', name='conv_4', padding='same')(conv_3)
         # use_pooling == False: (128, 256, 1)
         # Use_pooling == True: (32, 64, 1)
@@ -344,7 +367,10 @@ class NoveltyGAN():
 
             loss["softmax_output"] = "categorical_crossentropy"
             loss_weights["softmax_output"] = 1.
+
             generator.trainable = True
+
+
             generator.compile(
                 optimizer=adam_optimizer(self.lr_generator),
                 loss=loss,
