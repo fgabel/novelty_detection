@@ -184,7 +184,7 @@ class NoveltyGANTrainer():
             print("[VALIDATION] D loss and accuracy on fake data: ")
             dis_fake = self.gan_model.gan.evaluate(
                 img_batch,
-                [label_batch, np.zeros((10, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))]
+                [label_batch, np.zeros((self.data['val'].batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))]
             )
             """
                 See comment on self.gan_model.gan.metrics_names in train_step_gan down below
@@ -196,7 +196,7 @@ class NoveltyGANTrainer():
             print("[VALIDATION] D Loss on real data: ")
             dis_real = self.gan_model.discriminator.evaluate(
                 [label_batch, img_batch],
-                np.ones((10, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
+                np.ones((self.data['val'].batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
             )
             metrics_dict["VALIDATION: D_real_loss"] = dis_real 
 
@@ -331,7 +331,6 @@ class NoveltyGANTrainer():
             train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
        
         train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
-
 
         return train_loss_gan, train_loss_discriminator_mixed, train_loss_gan_from_dis, train_loss_gan_from_gen
         #return train_loss_gan, train_loss_discriminator_true, train_loss_discriminator_false

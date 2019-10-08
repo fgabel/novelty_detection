@@ -30,12 +30,12 @@ def main():
 
     # args = get_args()
 
-    tf_config = tf.ConfigProto()
-    tf_config.gpu_options.per_process_gpu_memory_fraction = 0.2
-    tf_config.gpu_options.allow_growth = True
+    # tf_config = tf.ConfigProto()
+    # tf_config.gpu_options.per_process_gpu_memory_fraction = 0.2
+    # tf_config.gpu_options.allow_growth = True
     # tf_config.log_device_placement = True
-    sess = tf.Session(config=tf_config)
-    K.set_session(sess)
+    # sess = tf.Session(config=tf_config)
+    # K.set_session(sess)
 
     config = process_config(args.config_folder+"train_config.json")
 
@@ -74,6 +74,7 @@ def main():
     # loss = trainer.train_step(train_on_real_data=True)
     # print("loss = ", loss)
 
+    # tf.get_default_graph().finalize()
     for epoch_id in range(config.num_epochs):
         loss = trainer.train_epoch(epoch_id)
 
