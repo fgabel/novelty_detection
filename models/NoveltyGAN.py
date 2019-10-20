@@ -406,9 +406,9 @@ class NoveltyGAN():
         loss = {}
         loss_weights = {}
         loss["generator"] = "categorical_crossentropy"
-        loss_weights["generator"] = 0
+        loss_weights["generator"] = 0.6
         loss["discriminator"] = "binary_crossentropy"
-        loss_weights["discriminator"] = 1
+        loss_weights["discriminator"] = 0.4
 
         gan.compile(
             optimizer=adam_optimizer(self.lr_gan),

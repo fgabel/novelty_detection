@@ -59,7 +59,7 @@ def main():
 
     # create novelty GAN
     lr = {
-        'discriminator': config.learning_rate,
+        'discriminator': 1.5 * config.learning_rate,
         'generator': config.learning_rate,
         'gan': config.learning_rate
     }

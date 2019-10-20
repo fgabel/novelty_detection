@@ -164,11 +164,13 @@ class NoveltyGANTrainer():
         _, discriminator_predictions_on_ood = self.gan_model.gan.predict_on_batch(img_batch_ood)
 
         #plt.save(discriminator_predictions_on_ood)
-        self.tensorboardimage.on_epoch_end(id, {
+
+        if print_images:
+            self.tensorboardimage.on_epoch_end(id, {
                 'generated_segmaps': softmax_output_to_binary_labels(generated_segmaps),
                 'corresponding_image': img_batch
             })
-        self.tfimage_of_novelty.on_epoch_end(id, {
+            self.tfimage_of_novelty.on_epoch_end(id, {
                 'generated_segmaps': discriminator_predictions_on_ood,
                 'corresponding_image': img_batch_ood
             })
@@ -327,7 +329,7 @@ class NoveltyGANTrainer():
         #train_loss_discriminator_false = self.train_step_discriminator(train_mode="fake_data")
 
 
-        for _ in range(20):
+        for _ in range(3):
             train_loss_discriminator_mixed = self.train_step_discriminator(train_mode="mixed")
        
         train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
