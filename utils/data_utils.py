@@ -14,7 +14,7 @@ def load_image(dataset_type, data_name, dataset_folders, images_directory_name, 
     folder_images_path = dataset_folders[dataset_type] + "/" + images_directory_name
     image_filename = folder_images_path + "/" + data_name + images_suffix
     image = skimage.io.imread(image_filename).astype(np.float32)
-
+    #print(image_filename)   
     return image
 
 def load_labels(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix):
@@ -62,6 +62,7 @@ def binarize_labels(labels, output_classes = 1000):
 
 def get_binary_label_data(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix, output_classes):
     # dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix
+
     return binarize_labels(get_label_data(
         dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix
     ), output_classes=output_classes)
@@ -95,6 +96,3 @@ def softmax_output_to_binary_labels(softmax_labels):
         binary_labels = scatter_numpy(np.zeros((H, W, C)), 2, indices_batch, np.ones((H, W, C)))
         binary_maps.append(binary_labels)
     return np.array(binary_maps)
-
-def smooth_labels(y):
-    return np.maximum(y + np.random.normal(0.0, 0.1, y.shape), np.zeros(y.shape))

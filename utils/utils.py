@@ -4,7 +4,7 @@ import skimage.io
 import numpy as np
 from tensorflow.math import argmax
 from tensorflow.keras.backend import flatten
-
+from .data_utils import softmax_output_to_binary_labels
 
 def get_args():
     argparser = argparse.ArgumentParser(description=__doc__)
@@ -23,6 +23,7 @@ def get_args():
 def calculate_confusion_matrix(pred_batch, label_batch):
     # 19 output classes
     OUTPUT_CLASSES = 19
+    IoUs = []
     bins = np.arange(-0.5, OUTPUT_CLASSES, 1)
     confusion_matrix = np.zeros([OUTPUT_CLASSES, OUTPUT_CLASSES], dtype=np.longlong)
     for i in range(label_batch.shape[0]):  # iterate through batch size
@@ -34,10 +35,10 @@ def calculate_confusion_matrix(pred_batch, label_batch):
         cM, a, b = np.histogram2d(pred_label_data, gt_label_data, bins=bins)
 
         confusion_matrix = confusion_matrix + np.asarray(cM, dtype=np.longlong)
+        IoUs.append(np.sum(np.equal(pred_label_data, gt_label_data))/pred_label_data.shape)
+        #print(IoUs)
 
-
-
-    return confusion_matrix
+    return confusion_matrix, np.mean(IoUs)
 
 def normalize_confusion_matrix(confusion_matrix):
     normalized_confusion_matrix = np.zeros(confusion_matrix.shape, dtype=np.float)
