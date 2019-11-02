@@ -1,8 +1,7 @@
 {
-  "exp_name": "iou_testing",
-  "num_epochs": 5,
-  "num_iter_per_epoch": 2,
+  "exp_name": "iou_testing_Sat_25_oct_300_epochs_trainable_1d_1g",
+  "num_epochs": 500,
+  "num_iter_per_epoch": 12,
   "learning_rate": 0.0001,
-  "batch_size": 2,
-  "max_to_keep":5
+  "batch_size": 7
 }

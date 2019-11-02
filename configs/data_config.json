@@ -8,11 +8,11 @@
   "images_suffix": "_leftImg8bit.png",
   "classes_suffix": "_gtFine_color.png",
   "dataset_folders": {
-    "training": "D:/students/data/cityscapes/train",
-    "validation": "D:/students/data/cityscapes/val",
-    "out_of_distribution_images": "D:/students/data/cityscapes/ood"
+    "training": "/export/home/ffeldman/FRANKTHETANK/data/leftImg8bit/train",
+    "validation": "/export/home/ffeldman/FRANKTHETANK/data/leftImg8bit/val",
+    "out_of_distribution_images": "/export/home/ffeldman/FRANKTHETANK/data/leftImg8bit/ood"
   },
-  "BASE_PATH": "D:/students/",
-  "MODEL_FILEPATH": "ganovelty/models/semseg_model.h5",
-  "IMAGENET_FILEPATH": "ganovelty/models/imagenet_weights_0_25.h5"
+  "BASE_PATH": "/export/home/ffeldman/FRANKTHETANK/novelty_detection_pixelwise",
+  "MODEL_FILEPATH": "models/semseg_model.h5",
+  "IMAGENET_FILEPATH": "models/imagenet_weights_0_25.h5"
 }
