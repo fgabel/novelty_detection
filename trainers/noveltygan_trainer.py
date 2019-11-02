@@ -70,7 +70,7 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
 """
 
 
-def named_logs(model, logs, metrics_dict = None):
+def named_logs(model, logs, metrics_dict=None):
     """
     github.com/erenon
     metrics_dict: an optional argument that entails metrics that are to be used optionally
@@ -116,7 +116,7 @@ class NoveltyGANTrainer():
         logs = []
         train_loss_dt = []
         train_loss_df = []
-        #train_loss_mixed = []
+        # train_loss_mixed = []
         metrics_dict = dict()
 
         n_per_epoch = self.config.num_iter_per_epoch
@@ -157,11 +157,16 @@ class NoveltyGANTrainer():
                 'corresponding_image': img_batch
             })
 
-        img_batch, label_batch = self.data.next_batch(batch_size=5,
-                                                      mode="validation")
+
 
         def evaluation_loop():
-            """This function evaluates both the discriminator and the generator after each epoch"""
+            """ Single evaluation step on a batch of data
+
+            The model consists of three parts to be evaluated: Generator, Discriminator and GAN. In this function, each
+            of these is evaluated wrt loss, accuracy (for the D) and IoU (for the G).
+            """
+            img_batch, label_batch = self.data.next_batch(batch_size=5,
+                                                          mode="validation")
             # Discriminator evaluation on fake data
             # print("Fake data: ")
             dis_fake = self.gan_model.gan.evaluate(img_batch, [label_batch, np.ones(5)])
@@ -182,24 +187,24 @@ class NoveltyGANTrainer():
             dis_real = self.gan_model.discriminator.evaluate([label_batch, img_batch], np.zeros(5))
             metrics_dict['discriminator_real_loss'] = dis_real
 
-            if 1:
-                fcn_iou_function = K.function([self.gan_model.generator.get_layer("rgb_input").input, K.learning_phase()],
-                    [self.gan_model.generator.get_layer("softmax_output").output])
-                pred_batch = fcn_iou_function([img_batch, 0])[0]
 
-                # Generator evaluation in terms of IoU and stuff # TODO does not work yet
-                #pred_batch = self.gan_model.generator(img_batch)  # (5, 128, 256, 19)
+            fcn_iou_function = K.function(
+                [self.gan_model.generator.get_layer("rgb_input").input, K.learning_phase()],
+                [self.gan_model.generator.get_layer("softmax_output").output])
+            pred_batch = fcn_iou_function([img_batch, 0])[0]
 
+            # Generator evaluation in terms of IoU and stuff # TODO does not work yet
+            # pred_batch = self.gan_model.generator(img_batch)  # (5, 128, 256, 19)
 
-                confusion_matrix = calculate_confusion_matrix(pred_batch, label_batch)
-                eval_out ={}
-                eval_out['confMatrix'] = confusion_matrix
+            confusion_matrix = calculate_confusion_matrix(pred_batch, label_batch)
+            eval_out = {}
+            eval_out['confMatrix'] = confusion_matrix
 
-                eval_out['norm_confMatrix'] = normalize_confusion_matrix(confusion_matrix)
+            eval_out['norm_confMatrix'] = normalize_confusion_matrix(confusion_matrix)
 
-                [pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
-                 class_TNR] = evaluate_confusion_matrix(confusion_matrix)
-                metrics_dict['validation IoU'] = np.mean(class_IoU)
+            [pixel_ACC, mean_ACC, overall_IoU, class_IoU, class_F1, class_TPR,
+             class_TNR] = evaluate_confusion_matrix(confusion_matrix)
+            metrics_dict['validation IoU'] = np.mean(class_IoU)
 
         evaluation_loop()
 
@@ -208,13 +213,13 @@ class NoveltyGANTrainer():
         return 0
 
     def train_step_discriminator(self, train_mode="true_data"):
-        """
-        Perform a single training step for the discriminator
-        We want to train the discriminator on pairs of (labels, images) with either
+        """ Single training step for the discriminator
+
+        The discriminator is trained on pairs of (labels, images) with either
             labels = generator(images) or
             labels = true labels for images
 
-        :return: The loss for this training step of the discriminator
+        :return: The loss for this training step of the discriminator (batch mean)
         """
 
         # TODO: Add additional control parameter for ratio of fake/real data to train on.
@@ -239,8 +244,8 @@ class NoveltyGANTrainer():
             img_batch_2, _ = self.data.next_batch(self.config.batch_size, mode="training")
             labels_batch_2 = self.gan_model.generator.predict(img_batch_2)
             discriminator_ground_truth_2 = np.zeros(self.config.batch_size)
-            img_batch = np.concatenate((img_batch_1, img_batch_2), axis = 0)
-            labels_batch = np.concatenate((labels_batch_1, labels_batch_2), axis = 0)
+            img_batch = np.concatenate((img_batch_1, img_batch_2), axis=0)
+            labels_batch = np.concatenate((labels_batch_1, labels_batch_2), axis=0)
             discriminator_ground_truth = np.concatenate((discriminator_ground_truth_1, discriminator_ground_truth_2))
         discriminator_input = [labels_batch, img_batch]
         discriminator_ground_truth = smooth_labels(discriminator_ground_truth)
@@ -268,8 +273,12 @@ class NoveltyGANTrainer():
 
         return loss
 
-    def train_step(self, train_gan = True):
-        # TODO: come up with training schedule
+    def train_step(self, train_gan=True):
+        """ Perform one training step of NoveltyGAN
+
+        :param train_gan:
+        :return:
+        """
 
         train_loss_discriminator_true = self.train_step_discriminator(train_mode="true_data")
         train_loss_discriminator_false = self.train_step_discriminator(train_mode="fake_data")
