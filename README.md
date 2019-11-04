@@ -6,5 +6,5 @@ Training hyperparameters are set in the .json files in the **configs** directory
 
 **Architecture**
 
-[Architecture of our NoveltyGAN](./novelty_gan_architecture.png)
+![Architecture of our NoveltyGAN](./novelty_gan_architecture.png)
 
