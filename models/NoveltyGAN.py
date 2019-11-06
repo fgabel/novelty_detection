@@ -85,6 +85,10 @@ class NoveltyGAN():
             self.pixelwise_w *= 4
             self.pixelwise_h *= 4
 
+        self.run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        self.run_metadata= tf.RunMetadata()
+
+
         self.generator = None
         self.discriminator = None
         self.build_generator()
@@ -93,6 +97,9 @@ class NoveltyGAN():
         # Stick generator and discriminator together to obtain the GAN
         self.gan = None
         self.build_gan()
+        
+         
+
 
     def build_discriminator(self):
         """ Discriminator from the paper "Semantic Segmentation using Adversarial Networks" (https://arxiv.org/pdf/1611.08408.pdf)
@@ -107,7 +114,7 @@ class NoveltyGAN():
 
         # Note: we are using channel last convention
         label_input = Input(shape=(128, 256, self.generator_output_classes))
-        img_input = Input(shape=(1024, 2048, 3))
+        img_input = Input(shape=(256, 512, 3))
 
         # Left branch
         # conv_left_1 = Conv2D(64, (5, 5), activation='relu', name='conv_left_1', padding='same')(label_input)
@@ -132,21 +139,23 @@ class NoveltyGAN():
         # Right branch
         # Note: Added one more stack of conv+relu+pool to get dimensions right
         # conv_right_1 = Conv2D(4, (5, 5), activation='relu', name='conv_right_1', padding='same')(img_input)
-        conv_right_1 = Conv2D(4, (5, 5), name='conv_right_1', padding='same')(img_input)
-        conv_right_1 = LeakyReLU(alpha=0.2)(conv_right_1)
+        #conv_right_1 = Conv2D(4, (5, 5), name='conv_right_1', padding='same')(img_input)
+        #conv_right_1 = LeakyReLU(alpha=0.2)(conv_right_1)
         # (1024, 2048) -> (1024, 2048)
-        pool_right_1 = AveragePooling2D((2, 2), strides=(2, 2), name='pool_right_1')(conv_right_1)
-        pool_right_1 = BatchNormalization()(pool_right_1)
+        #pool_right_1 = AveragePooling2D((2, 2), strides=(2, 2), name='pool_right_1')(conv_right_1)
+        #pool_right_1 = BatchNormalization()(pool_right_1)
         # (1024, 2048) -> (512, 1024)
         # conv_right_2 = Conv2D(16, (5, 5), activation='relu', name='conv_right_2', padding='same')(pool_right_1)
-        conv_right_2 = Conv2D(16, (5, 5), name='conv_right_2', padding='same')(pool_right_1)
-        conv_right_2 = LeakyReLU(alpha=0.2)(conv_right_2)
+        #conv_right_2 = Conv2D(16, (5, 5), name='conv_right_2', padding='same')(pool_right_1)
+        #conv_right_2 = LeakyReLU(alpha=0.2)(conv_right_2)
         # (512, 1024) -> (512, 1024)
-        pool_right_2 = AveragePooling2D((2, 2), strides=(2, 2), name='pool_right_2')(conv_right_2)
-        pool_right_2 = BatchNormalization()(pool_right_2)
+        #pool_right_2 = AveragePooling2D((2, 2), strides=(2, 2), name='pool_right_2')(conv_right_2)
+        #pool_right_2 = BatchNormalization()(pool_right_2)
         # (512, 1024) -> (256, 512)
+        conv_right_temp = Conv2D(64, (5, 5), name='conv_right_temp', padding='same')(img_input)
+        conv_right_temp = LeakyReLU(alpha=0.2)(conv_right_temp)
         # conv_right_3 = Conv2D(64, (5, 5), activation='relu', name='conv_right_3', padding='same')(pool_right_2)
-        conv_right_3 = Conv2D(64, (5, 5), name='conv_right_3', padding='same')(pool_right_2)
+        conv_right_3 = Conv2D(64, (5, 5), name='conv_right_3', padding='same')(conv_right_temp)
         conv_right_3 = LeakyReLU(alpha=0.2)(conv_right_3)
         # (256, 512) -> (256, 512)
         pool_right_3 = AveragePooling2D((2, 2), strides=(2, 2), name='pool_right_3')(conv_right_3)
@@ -171,10 +180,10 @@ class NoveltyGAN():
             conv_2 = MaxPooling2D((2, 2), strides=(2, 2), name='pool_2')(conv_2)
         conv_2 = BatchNormalization()(conv_2)
         # conv_3 = Conv2D(256, (3, 3), activation='relu', name='conv_3', padding='same')(conv_2)
-        conv_3 = Conv2D(256, (3, 3), name='conv_3', padding='same')(conv_2)
-        conv_3 = LeakyReLU(alpha=0.2)(conv_3)
-        conv_3 = BatchNormalization()(conv_3)
-        conv_4 = Conv2D(1, (3, 3), activation='sigmoid', name='conv_4', padding='same')(conv_3)
+        #conv_3 = Conv2D(256, (3, 3), name='conv_3', padding='same')(conv_2)
+        #conv_3 = LeakyReLU(alpha=0.2)(conv_3)
+        #conv_3 = BatchNormalization()(conv_3)
+        conv_4 = Conv2D(1, (3, 3), activation='sigmoid', name='conv_4', padding='same')(conv_2)
         # use_pooling == False: (128, 256, 1)
         # Use_pooling == True: (32, 64, 1)
 
@@ -184,7 +193,8 @@ class NoveltyGAN():
 
         discriminator = Model(inputs=[label_input, img_input], outputs=conv_4, name="discriminator")
         discriminator.compile(loss=tf.keras.losses.BinaryCrossentropy(),
-                              optimizer=adam_optimizer(self.lr_discriminator))
+                              optimizer=adam_optimizer(self.lr_discriminator),
+                              options=self.run_options, run_metadata=self.run_metadata)
 
         self.discriminator = discriminator
 
@@ -261,24 +271,24 @@ class NoveltyGAN():
                          bias_initializer=zeros_weight_filler, kernel_initializer=xavier_weight_filler,
                          weights=weight_value_tuples[1] if len(weight_value_tuples) > 0 else None, trainable=False,
                          padding='same')(conv1_1)
-        pool1 = MaxPooling2D((2, 2), strides=(2, 2), name="pool1")(conv1_2)
+        #pool1 = MaxPooling2D((2, 2), strides=(2, 2), name="pool1")(conv1_2)
         # shape = (512,1024)
 
         conv2_1 = Conv2D(int(128 * self.alpha), (3, 3), activation='relu', name="conv2_1",
                          bias_initializer=zeros_weight_filler, kernel_initializer=xavier_weight_filler,
                          weights=weight_value_tuples[2] if len(weight_value_tuples) > 0 else None, padding='same')(
-            pool1)
+            conv1_2)
         conv2_2 = Conv2D(int(128 * self.alpha), (3, 3), activation='relu', name="conv2_2",
                          bias_initializer=zeros_weight_filler, kernel_initializer=xavier_weight_filler,
                          weights=weight_value_tuples[3] if len(weight_value_tuples) > 0 else None, padding='same')(
             conv2_1)
-        pool2 = MaxPooling2D((2, 2), strides=(2, 2), name="pool2")(conv2_2)
+        #pool2 = MaxPooling2D((2, 2), strides=(2, 2), name="pool2")(conv2_2)
         # shape = (256,512)
-
+        
         conv3_1 = Conv2D(int(256 * self.alpha), (3, 3), activation='relu', name="conv3_1",
                          bias_initializer=zeros_weight_filler, kernel_initializer=xavier_weight_filler,
                          weights=weight_value_tuples[4] if len(weight_value_tuples) > 0 else None, padding='same')(
-            pool2)
+            conv2_2)
         conv3_2 = Conv2D(int(256 * self.alpha), (3, 3), activation='relu', name="conv3_2",
                          bias_initializer=zeros_weight_filler, kernel_initializer=xavier_weight_filler,
                          weights=weight_value_tuples[5] if len(weight_value_tuples) > 0 else None, padding='same')(
@@ -374,7 +384,8 @@ class NoveltyGAN():
             generator.compile(
                 optimizer=adam_optimizer(self.lr_generator),
                 loss=loss,
-                loss_weights=loss_weights
+                loss_weights=loss_weights,
+                options=self.run_options, run_metadata=self.run_metadata
             )
 
             self.generator = generator
@@ -406,15 +417,16 @@ class NoveltyGAN():
         loss = {}
         loss_weights = {}
         loss["generator"] = "categorical_crossentropy"
-        loss_weights["generator"] = 0.6
+        loss_weights["generator"] = 0.7
         loss["discriminator"] = "binary_crossentropy"
-        loss_weights["discriminator"] = 0.4
+        loss_weights["discriminator"] = 0.3
 
         gan.compile(
             optimizer=adam_optimizer(self.lr_gan),
             loss=loss,
             loss_weights=loss_weights,
-            metrics=['accuracy']
+            metrics=['accuracy'],
+            options=self.run_options, run_metadata=self.run_metadata
         )
 
         """

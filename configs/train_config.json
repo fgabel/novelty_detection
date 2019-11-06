@@ -1,7 +1,7 @@
 {
-  "exp_name": "iou_testing_Sat_25_oct_300_epochs_trainable_1d_1g",
+  "exp_name": "low_res_long_net_nov_03_epochs_trainable_1d_3g_3gan_0.0002lr",
   "num_epochs": 500,
-  "num_iter_per_epoch": 12,
-  "learning_rate": 0.0001,
-  "batch_size": 7
+  "num_iter_per_epoch": 2,
+  "learning_rate": 0.0002,
+  "batch_size":1
 }

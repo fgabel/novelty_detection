@@ -2,7 +2,7 @@ import argparse
 import skimage.transform
 import skimage.io
 import numpy as np
-
+import sys
 from utils.numpy_utils import scatter_numpy
 
 COLOR_PALETTE = [(119, 11, 32), (70, 70, 70), (0, 60,100), ( 0, 0, 142), (190, 153, 153), (0, 0, 230),
@@ -14,7 +14,8 @@ def load_image(dataset_type, data_name, dataset_folders, images_directory_name, 
     folder_images_path = dataset_folders[dataset_type] + "/" + images_directory_name
     image_filename = folder_images_path + "/" + data_name + images_suffix
     image = skimage.io.imread(image_filename).astype(np.float32)
-    #print(image_filename)   
+       
+    #image = skimage.transform.rescale(image, 0.25, anti_aliasing = False)
     return image
 
 def load_labels(dataset_type, data_name, dataset_folders, classes_directory_name, classes_suffix):
@@ -23,7 +24,7 @@ def load_labels(dataset_type, data_name, dataset_folders, classes_directory_name
     labels_filename = folder_labels_path + "/" + data_name + classes_suffix
 
     labels = skimage.io.imread(labels_filename).astype(np.int8)
-
+    
     return labels
 
 def get_image_data(dataset_type, data_name, dataset_folders, images_directory_name, images_suffix, data_mean, data_std):

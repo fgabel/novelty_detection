@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 import argparse
 from data_loader.data_generator import DataGenerator
+from tensorflow.python.client import timeline
 
 from models.NoveltyGAN import NoveltyGAN
 
@@ -64,12 +65,12 @@ def main():
         'gan': config.learning_rate
     }
     novelty_gan = NoveltyGAN(generator_output_classes=cfg.OUTPUT_CLASSES, fcn=True, upsampling=False,
-                             alpha=0.25, imagenet_filepath=IMAGENET_FILEPATH, model_filepath=MODEL_FILEPATH,
+                             alpha=0.25, imagenet_filepath=None, model_filepath=None,
                              use_pooling=False, learning_rates=lr)
-
+    
+    
     # create the trainer object
     trainer = NoveltyGANTrainer(novelty_gan, data, config)
-
     # loss = trainer.train_step_gan()
     # loss = trainer.train_step(train_on_real_data=True)
     # print("loss = ", loss)
@@ -77,6 +78,10 @@ def main():
     # tf.get_default_graph().finalize()
     for epoch_id in range(config.num_epochs):
         loss = trainer.train_epoch(epoch_id)
+        tl = timeline.Timeline(novelty_gan.run_metadata.step_stats)
+        ctf = tl.generate_chrome_trace_format()
+        with open('timeline.json', 'w') as f:
+            f.write(ctf)
 
     # novelty_gan.gan.summary()
 

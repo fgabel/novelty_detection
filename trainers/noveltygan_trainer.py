@@ -293,7 +293,9 @@ class NoveltyGANTrainer():
                 (self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w)
             )
             img_batch = np.concatenate((img_batch_1, img_batch_2), axis = 0)
+            
             labels_batch = np.concatenate((labels_batch_1, labels_batch_2), axis = 0)
+            
             discriminator_ground_truth = np.concatenate((discriminator_ground_truth_1, discriminator_ground_truth_2))
         discriminator_input = [labels_batch, img_batch]
 
@@ -318,7 +320,7 @@ class NoveltyGANTrainer():
         gan_supervision = np.ones((self.config.batch_size, self.gan_model.pixelwise_h, self.gan_model.pixelwise_w))
 
         logs = self.gan_model.gan.train_on_batch(img_batch, [label_batch, gan_supervision])
-        print("Train step gan logs below, i.e. combined loss, gen_loss, dis_loss, gen_acc, dis_acc")
+        print("Train step GAN logs below, i.e. combined loss, gen_loss, dis_loss, gen_acc, dis_acc")
         print(logs)
         """
             Note: self.gan_model.gan.metrics_names [
@@ -341,11 +343,12 @@ class NoveltyGANTrainer():
 
     def train_step(self):
 
-        for _ in range(2):
+        for _ in range(1):
             train_loss_discriminator = self.train_step_discriminator(train_mode="mixed")
+        for _ in range(3):    
             train_loss_generator = self.train_step_generator()
-       
-        train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
+        for _ in range(3):
+            train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
         
         return train_loss_gan, train_loss_discriminator, train_loss_gan_from_dis, train_loss_gan_from_gen, train_loss_generator
         #return train_loss_gan, train_loss_discriminator_true, train_loss_discriminator_false
