@@ -1,3 +1,4 @@
+
 from tqdm import tqdm
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -351,4 +352,4 @@ class NoveltyGANTrainer():
             train_loss_gan, train_loss_gan_from_dis, train_loss_gan_from_gen = self.train_step_gan()
         
         return train_loss_gan, train_loss_discriminator, train_loss_gan_from_dis, train_loss_gan_from_gen, train_loss_generator
-        #return train_loss_gan, train_loss_discriminator_true, train_loss_discriminator_false
+

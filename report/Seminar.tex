@@ -1,0 +1,61 @@
+\documentclass{mimore}
+
+\newcommand{\sAuthor  }{Frank Gabel, Christopher Klugmann}
+\newcommand{\sTitle   }{Novelty Detection }
+\newcommand{\sSubtitle}{Finding out-of-distribution objects in semantic segmentation maps}
+\newcommand{\sSubject }{3D Computer Vision}
+\newcommand{\sCourse  }{HCI}
+\newcommand{\sNumber  }{3537204, xxxxxxx}
+\newcommand{\sDate    }{\today}
+
+\bibliography{Seminar}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TikZ & pgfplots
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{makecell}
+
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.12}
+\usepackage{booktabs}
+% Permits accessing the smallest and largest x value of a plot
+\makeatletter
+  \newcommand{\pgfplotsxmin}{\pgfplots@xmin}
+  \newcommand{\pgfplotsxmax}{\pgfplots@xmax}
+\makeatother
+
+% Permits accessing the smallest and largest y value of a plot
+\makeatletter
+  \newcommand{\pgfplotsymin}{\pgfplots@ymin}
+  \newcommand{\pgfplotsymax}{\pgfplots@ymax}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin of main document
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+  \maketitle
+
+  \tableofcontents
+  \bookmarksetup{startatroot}
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % Add your sources here. You may also directly input LaTeX commands
+  % here, but the use of `\include` is strongly encouraged.
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  \include{Sources/Introduction}
+  \include{Sources/Content}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Back matter: don't change anything here
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  \bookmarksetup{startatroot}
+  \printbibliography
+
+\end{document}

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import division
 from __future__ import print_function
 
@@ -462,7 +463,5 @@ class NoveltyGAN():
         )
         self.generator.load_weights(latest_generator)
         self.discriminator.load_weights(latest_discriminator)
-
-
 
 

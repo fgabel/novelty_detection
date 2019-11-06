@@ -97,3 +97,4 @@ def softmax_output_to_binary_labels(softmax_labels):
         binary_labels = scatter_numpy(np.zeros((H, W, C)), 2, indices_batch, np.ones((H, W, C)))
         binary_maps.append(binary_labels)
     return np.array(binary_maps)
+
