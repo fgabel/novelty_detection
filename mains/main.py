@@ -65,7 +65,7 @@ def main():
         'gan': config.learning_rate
     }
     novelty_gan = NoveltyGAN(generator_output_classes=cfg.OUTPUT_CLASSES, fcn=True, upsampling=False,
-                             alpha=0.25, imagenet_filepath=None, model_filepath=None,
+                             alpha=0.25, imagenet_filepath=None, model_filepath=MODEL_FILEPATH,
                              use_pooling=False, learning_rates=lr)
     
     
@@ -78,10 +78,10 @@ def main():
     # tf.get_default_graph().finalize()
     for epoch_id in range(config.num_epochs):
         loss = trainer.train_epoch(epoch_id)
-        tl = timeline.Timeline(novelty_gan.run_metadata.step_stats)
-        ctf = tl.generate_chrome_trace_format()
-        with open('timeline.json', 'w') as f:
-            f.write(ctf)
+        #tl = timeline.Timeline(novelty_gan.run_metadata.step_stats)
+        #ctf = tl.generate_chrome_trace_format()
+        #with open('timeline.json', 'w') as f:
+        #    f.write(ctf)
 
     # novelty_gan.gan.summary()
 
