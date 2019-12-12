@@ -5,11 +5,17 @@ Detecting unknown objects in semantic segmentations is crucial for detecting cor
 ## Requirements
 
 python>=3.6
+
 tensorflow-gpu==1.15.0
+
 tensorflow==1.15.0
+
 h5py==2.10.0
+
 numpy==1.17.4
+
 tqdm==4.40.2
+
 scikit-learn==0.22
 
 ------
