@@ -1,5 +1,5 @@
 # Novelty Detection using an adversarial training scheme (implemented using tf.keras)
-Detecting unknown objects in semantic segmentations is crucial for detecting corner cases in autonomous driving. This problem is far from solved. We propose a novel architecture that implicitly yields novelties.
+Detecting unknown objects in semantic segmentations is crucial for handling corner cases in autonomous driving. This problem is far from solved. We propose a novel architecture that implicitly yields novelties.
 
 ------
 ## Requirements
